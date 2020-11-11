@@ -1,0 +1,25 @@
+{
+  "name": "airecruit_backend",
+  "version": "0.0.0",
+  "description": "airecruit_backend",
+  "main": "app.js",
+  "author": {
+    "name": "prhod_000"
+  },
+  "dependencies": {
+    "aws-sdk": "^2.519.0",
+    "body-parser": "^1.19.0",
+    "busboy": "^0.3.1",
+    "express": "^4.17.1",
+    "express-session": "^1.17.0",
+    "ffmpeg": "0.0.4",
+    "file-system": "^2.2.2",
+    "json2csv": "^4.5.4",
+    "log4js": "^2.11.0",
+    "morgan": "^1.9.1",
+    "mysql": "^2.17.1",
+    "nodemailer": "^6.3.1",
+    "path": "^0.12.7",
+    "q": "^1.5.1"
+  }
+}

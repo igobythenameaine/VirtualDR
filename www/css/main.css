@@ -1,0 +1,267 @@
+body {
+  background: rgb(252, 249, 249);
+  color: white;
+  font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
+  font-size: 18pt;
+  font-display: swap;
+}
+
+h1 {
+  color: black;
+}
+
+#scene {
+  position: fixed;
+  top: 5%;
+  bottom: 50%;
+  left: 5%; 
+  right: 60%;
+ 
+}
+#subtitles {
+  /* border-style: solid;  */
+  position: fixed;
+  top: 50%;
+  bottom: 35%;
+  left: 5%;
+  right: 60%;
+  color: black;
+  text-align: center;
+  font-size: 1em;
+  z-index: 10;
+}
+
+.inputText{
+  /* visibility: hidden !important;  */
+  position: fixed;
+  z-index: 10;
+  top:80%;
+  bottom: 5%;
+  left: 5%;
+  right: 60%;
+  font-size: 1em; 
+  color: black;
+}
+
+#textBox {
+  position: fixed;
+  left: 7%;
+  width: 30%;
+  top: 85%;
+  bottom: 10%;
+}
+
+#submitBtn {
+  position: fixed;
+  left: 20%;
+  top: 91%;
+  bottom: 6%;
+}
+
+.words{
+  text-align: center;
+  position: fixed;
+  top:65%;
+  bottom:20%;
+  left: 5%;
+  right: 60%;
+}
+
+#interactivePanel {
+  position: fixed;
+  border-style: solid;
+  border-width: 1px;
+  left: 40%;
+  right: 5%;
+  top: 5%;
+  bottom: 5%;
+}
+
+#startButton {
+  position: fixed;
+  z-index: 10;  
+  bottom: 20%;
+  right: 28%;
+}
+
+
+#reasonBtns {
+  position: absolute;
+}
+
+#chestReasons {
+  position: absolute;
+}
+#gasReasons {
+  position: absolute;
+}
+#bowelMovement {
+  position: absolute;
+}
+#timeBtns {
+  position: absolute;
+}
+#startUp {
+  position: absolute;
+}
+#YNBtns {
+  position: absolute;
+}
+#DocAn {
+  position: absolute;
+}
+
+#mild {
+  position: absolute;
+}
+
+#moderate {
+  position: absolute;
+}
+
+#severe {
+  position: absolute;
+}
+
+#urgent {
+  position: absolute;
+}
+
+#mic {
+  position: fixed;
+  z-index: 10;  
+  bottom: 10%;
+  right:10%;
+}
+
+
+ @import url('https://fonts.googleapis.com/css?family=Barlow+Semi+Condensed');
+
+
+.fa-microphone{
+  color: #FFFFFF;
+  background: rgba(30, 144, 255, 0.6);
+  padding: 0.2em 0.4em;
+  }
+
+.circle{
+  position: fixed; 
+  z-index: 10;  
+  bottom: 10%;
+  border-radius: 60%;
+  margin: 0.05em;
+  font-size: 1em;
+}
+.cmn-t-pulse {
+  animation: pulse 1s ease infinite;
+  /* animation: shadow-pulse 1s infinite; */ 
+  /* transition: transform 0.2s; */
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.1);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes shadow-pulse
+{
+  0% {
+    box-shadow: 0 0 0 0px rgba(0, 0, 0, 0.2);
+  }
+  100% {
+    box-shadow: 0 0 0 35px rgba(0, 0, 0, 0);
+  }
+}
+
+@keyframes shadow-pulse-big
+{
+  0% {
+    box-shadow: 0 0 0 0px rgba(0, 0, 0, 0.1);
+  }
+  100% {
+    box-shadow: 0 0 0 70px rgba(0, 0, 0, 0);
+  }
+}
+
+#recordedAudio {
+left: 55%;
+bottom: 10%;
+z-index: 10;
+visibility: visible; 
+position: fixed;
+}
+
+.login-form {
+  width: 300px;
+  margin: 0 auto;
+}
+.login-form h1 {
+  font-size: 24px;
+  padding: 20px 0 20px 0;
+}
+
+.login-form input[id="password"],
+.login-form input[id="text"] {
+  width: 100%;
+  padding: 15px;
+  border: 1px solid #000000;
+  margin-bottom: 15px;
+  box-sizing:border-box;
+
+}
+.login-form input[type="submit"] {
+  width: 100%;
+  padding: 15px;
+  background-color: #535b63;
+  border: 0;
+  box-sizing: border-box;
+  cursor: pointer;
+  font-weight: bold;
+  color: #ffffff;
+}
+
+.doc-login-form {
+  width: 300px;
+  margin:  auto;
+}
+.doc-login-form h1 {
+  font-size: 24px;
+  padding: 20px 0 20px 0;
+}
+
+.doc-login-form input[id="password"],
+.doc-login-form input[id="text"] {
+  width: 100%;
+  padding: 15px;
+  border: 1px solid #000000;
+  margin-bottom: 15px;
+  box-sizing:border-box;
+
+}
+.doc-login-form input[type="submit"] {
+  width: 100%;
+  padding: 15px;
+  background-color: #535b63;
+  border: 0;
+  box-sizing: border-box;
+  cursor: pointer;
+  font-weight: bold;
+  color: #ffffff;
+}
+  
+  
+ 
+  
+
+  
+
+

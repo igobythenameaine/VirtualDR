@@ -1,0 +1,209 @@
+﻿<!-- make a homepage for virtual doctor -->
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1" charset="utf-8">
+    <meta name="description" content="virtual doctor in CF office. With a input text panel. speech input panels ">
+    <meta name="theme-color" content="#000000"/>
+    
+     <title>Virtual Doctor Project</title>
+    
+    <script src="lib/angular.js"></script>
+    <script src="lib/three.js"></script>
+    <script src="lib/SEA.js"></script>
+    <script src="lib/SEA3D.js"></script>
+    <script src="lib/SEA3DDeflate.js"></script>
+    <script src="lib/SEA3DLoader.js"></script>
+    <script src="lib/SEA3DLegacy.js"></script>
+    <script src="lib/SEA3DLZMA.js"></script>
+    <script src="js/main.js"></script>
+    <script src="js/playerController.js"></script>
+    <script src="js/sceneService.js"></script>
+    <script src="js/avatarService.js"></script>
+    <script src="js/scriptService.js"></script>
+    <script src="js/speechService.js"></script>
+    <script src="js/patientService.js"></script>
+    <script src="js/questionEndService.js"></script>
+    <script src="js/questionSinusService.js"></script>
+    <script src="js/questionGiService.js"></script>
+    <script src="js/questionChestService.js"></script>
+    <script src="js/recordService.js"></script>
+    <script src="js/sendFileService.js"></script> 
+    <script src="js/textFileService.js"></script> 
+    <script src="js/accountService.js"></script> 
+    <link type="text/css" href="css/main.css" rel="stylesheet" />
+    <link href="//netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
+</head>
+<body ng-app="virtualDr" ng-controller="playerController" style="overflow: hidden">
+    
+    <!-- <div ng-controller="PatientController">
+        <form novalidate class="simple-form">
+            <label>Name: <input type="text" ng-model="user.name" /></label><br />
+            <input type="submit" ng-click="update(user)" value="Save" />
+        </form>
+        <pre>{{user.name}}</pre>
+    </div> -->
+    
+    
+    <div class="anim-object active" id="box-object-gradient-hor" style="animation: 8s ease 0s 1 normal both running bg-pan-left;"></div>
+
+    <p>
+        <audio id=recordedAudio></audio>
+    </p>
+
+    <div id="scene"></div>
+
+    <fieldset id="subtitles">
+        <legend>Doctor says:</legend>
+        {{data.subtitles}}
+    </feildset>
+
+    <fieldset class="inputText">
+        <legend>Type here:</legend>
+        <textarea id="textBox" rows="2" cols="70"></textarea>
+        <label for="textBox"></label>
+        <button type="button" id ="submitBtn" ng-click="getTextInput()">Submit</button>
+    </fieldset>
+    
+    <fieldset class="words">
+        <legend>You say:</legend>
+        <p></p>
+    </fieldset>
+
+      
+    <div id="interactivePanel">
+        <div id="mic">
+            <span><i class="cmn-t-pulse fa fa-microphone circle"></i></span>
+        </div> 
+        
+          
+        <div id="startButton">
+            <div ng-if="line==undefined">
+                <button class="btn" ng-click="startScript()">Start Recording...</button>
+            </div>
+        </div>
+
+        <div id="startUp" ng-show="showStart">
+            <h1>Welcome</h1>
+            <p>{{start}}</p>
+
+        </div>
+
+        <div id="reasonBtns" ng-show="showReason">
+            <h1>Please indicate what the problem is from the options... </h1>
+            <p>{{firstReason}}</p>
+            <p>{{secondReason}}</p>
+            <p>{{thirdReason}}</p>
+            <p>{{otherReason}}</p>
+        </div>
+
+        <div id="reasonBtns" ng-show="showOtherReason">
+            <h1>Please indicate what the problem is from the options... </h1>
+            <p>{{secondReason}}</p>
+            <p>{{thirdReason}}</p>
+            <p>{{firstReason}}</p>
+            <p>{{noReason}}</p>
+        </div>
+
+        <div id="timeBtns" ng-show="showTime">
+                <h1>Please indicate from the options below... </h1>
+                <p>{{firstTime}}</p>
+                <p>{{secondTime}}</p>
+                <p>{{thirdTime}}</p>
+        </div>
+
+        <div id="YNBtns" ng-show="showYN">
+                <h1>Please indicate from the options below... </h1>
+                <p>Yes</p>
+                <p>No</p>
+        </div>
+
+        <div id="DocAn" ng-show="doc">
+            <p>In this section I will just document your answers, there is no right or wrong answers here </p>
+        </div>
+
+        <div id="mild">
+            <h1>GoodBye</h1>
+            <p>Your details have been sent, monitor your symptoms over the next 24 hours and someone will call you in the next 24 hours. If you feel we have not met your needs or assessed you fully please contact the staff.
+            </p>
+        </div>
+
+        <div id="moderate">
+            <h1>GoodBye</h1>
+            <p>Your details have been sent, Someone will call you in the next 24 hours. If you feel we have not met your needs or assessed you fully please contact the staff.
+            </p>
+        </div>
+
+        <div id="severe">
+            <h1>GoodBye</h1>
+            <p>Your details have been sent, Someone will call you as early as possible. If you feel we have not met your needs or assessed you fully please contact the staff
+            </p>
+        </div>
+
+        <div id="urgent">
+            <h1>GoodBye</h1>
+            <p>Your details have been sent, please call the team as soon as possible.
+            </p>
+        </div>
+
+        <div id="chestReasons" ng-show="chestReason">
+                <h1>Please indicate what the problem is from the options... </h1>
+                <p>A Cough</p>
+                <p>Shortness of breath</p>
+                <p>Blood in sputum</p>
+                <p>Chest discomfort</p> 
+        </div>
+
+        <div id="chestReasons" ng-show="otherchestReason">
+            <h1>Please indicate what the problem is from the options... </h1>
+            <p>A Cough</p>
+            <p>Shortness of breath</p>
+            <p>Blood in sputum</p>
+            <p>Chest discomfort</p> 
+            <p>Next</p>
+        </div>
+
+        <div id="chestReasons" ng-show="showColour">
+            <h1>Please indicate what the problem is from the options... </h1>
+            <p>Clear</p>
+            <p>Green</p>
+            <p>Yellow</p>
+            <p>Brown</p>
+        </div>
+
+        <div id="chestReasons" ng-show="showAmount">
+            <h1>Please indicate what the problem is from the options... </h1>
+            <p>None</p>
+            <p>Normal</p>
+            <p>More than normal</p>
+            <p>Alot more than normal</p>
+        </div>
+
+        <div id="chestReasons" ng-show="showBetter">
+            <h1>Please indicate what the problem is from the options... </h1>
+            <p>Better</p>
+            <p>same</p>
+            <p>worse</p>
+        </div>
+
+        <div id="gasReasons">
+                <h1>Please indicate what the problem is from the options... </h1>
+                <p>Constipation</p>
+                <p>Diarrhoea</p>
+                <p>Abdominal pain</p>
+                <p>Vomiting</p>
+                <p>Heartburn</p>   
+        </div>
+
+        <div id="bowlMovement">
+                <h1>Please indicate how many it is from the options... </h1>
+                <p>1 to 3</p>
+                <p>3 to 6</p>
+                <p>more than 6</p>  
+        </div>
+    </div>
+
+
+</body>
+</html>
+
