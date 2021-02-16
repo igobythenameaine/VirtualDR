@@ -2,15 +2,16 @@
 //prepare sinus questions from database
 
 module.exports = function (app, db, scenarioHelper) {
-    const sql = "SELECT id, text, speechid, guide FROM `sinus_question`";
+    const sql = "SELECT id, text, speechid, guide, images FROM `objective_question`";
     //parpare questions and call ttsHelper to generate mp3, json and txt file from sinus_questions
     db.query(sql, function(err, result) {
         if(err) throw err;
         scenarioHelper.prepareQuestions(result);
     });
 
-    app.get('/sinus-questions', function(req, res) {
+    app.get('/objective-questions', function(req, res) {
         db.query(sql, function(err, result) {
+    const sql = "SELECT id, text, speechid, guide, imgaes FROM `objective_question`";
             if(err) throw err;
 
             //change format of results to call questions using id

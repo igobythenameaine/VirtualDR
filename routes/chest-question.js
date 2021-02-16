@@ -1,7 +1,7 @@
 module.exports = function (app, db, scenarioHelper) {
     const sql = 
     //get questions from DB
-    "SELECT id, text, speechid FROM `chest_question` UNION SELECT id, text, speechid FROM `cough_question` UNION SELECT id, text, speechid FROM `short_breath_question` UNION SELECT id, text, speechid FROM `haemoptyis_question` UNION SELECT id, text, speechid FROM `chest_discomfort_question` UNION SELECT id, text, speechid FROM `additional_question`"; 
+    "SELECT id, text, speechid, guide FROM `chest_question` UNION SELECT id, text, speechid, guide FROM `cough_question` UNION SELECT id, text, speechid, guide FROM `short_breath_question` UNION SELECT id, text, speechid, guide FROM `haemoptyis_question` UNION SELECT id, text, speechid, guide FROM `chest_discomfort_question` UNION SELECT id, text, speechid, guide FROM `additional_question`"; 
 
     db.query(sql, function(err, result) {
         if(err) throw err;

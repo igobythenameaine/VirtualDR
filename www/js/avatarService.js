@@ -1,6 +1,6 @@
-﻿console.log("AS1");
+﻿
 app.service("avatarService", function () {
-    console.log("AS2");
+    
 
     //create avatar 
 
@@ -27,7 +27,6 @@ app.service("avatarService", function () {
             self.textures.dn = loadTexture("dn.jpg");
             self.textures.throat = loadTexture("sock.jpg");
             self.textures.eye = loadTexture("eye_3.png");
-
             self.textures.eyeNormal = loadTexture("eye_n.png");
             self.textures.hair = loadTexture("hair.png");
             self.textures.eyeBorder = loadTexture("eye_cont.png");
@@ -85,8 +84,10 @@ app.service("avatarService", function () {
            
 
             function importMesh(name, material, options) {
+
                 var mesh = loader.getMesh(name);
                 mesh.material = material;
+
                 if (options.scale != undefined) {
                     mesh.scale.set(options.scale[0], options.scale[1], options.scale[2])
                 };

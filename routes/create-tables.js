@@ -22,8 +22,6 @@ app.get('/createpatientdb',(req, res) => {
     });
   });
 
-
-
   app.get('/alterusertable',(req, res) =>{
     var sql = "ALTER TABLE patients ADD COLUMN (sinus_basescore VARCHAR(3) NOT NULL, chest_basescore VARCHAR(3) NOT NULL, gi_basescore VARCHAR(3) NOT NULL)";
     db.query(sql, function(err, result){
@@ -102,142 +100,46 @@ app.get('/addalldocinfo', (req, res) => {
   });
 });
 
-// create the patients baseline tables 
-
-  app.get('/createchesttable',(req, res) => {
-    var sql = "CREATE TABLE baseline_chest (chest_id INT NOT NULL AUTO_INCREMENT, patient_id INT, cough VARCHAR(255), shortness_of_breath VARCHAR(255), sputum_baseline_volume VARCHAR(255), sputum_baseline_colour VARCHAR(255), sputum_baseline_consistency VARCHAR(255), chest_discomfort VARCHAR(255), chest_tightness VARCHAR(255), blood_in_sputum VARCHAR(255), fever VARCHAR(255), baseline_score VARCHAR(255), PRIMARY KEY(chest_id),FOREIGN KEY (patient_id) REFERENCES patients(patient_id))";
-    db.query(sql, function (err, result) {
-      if (err) throw err;
-      console.log(" chest table created" + result);
-      res.send('chest table working....')
-    });
-  });
-
-  app.get('/addresults', (req, res) => {
-    let cough = [
-        ['occasional, cough, dry, mild', 'occasional, on exertion', 'little', 'clear', 'normal', 'never', 'never', 'never', 'never'],
-        ['frequent, productive', 'occasional, on exertion', 'little', 'green/yellow', 'normal', 'never', 'occasioanl', 'never','never'],
-        ['occasional, cough, dry, mild','occasional, on exertion', 'little', 'normal','normal', 'never', 'never', 'never', 'never'],
-        ['frequent, productive','occasional, on exertion', '60ml', 'dark green', 'normal', 'never', 'never', 'frequent', 'never'],
-        ['frequent, productive', 'occasional, on exertion', 'little 10 or 15ml', 'light green/clear', 'normal', 'never', 'occasional', 'never', 'never'],
-        ['frequent, productive', 'occasional', 'little 15ml', 'clear', 'normal', 'never', 'occasional', 'never', 'never'],
-        ['frequent, productive','never', 'little', 'clear/yellow', 'normal', 'never', 'never', 'never', 'never'],
-        ['frequent, productive', 'never', 'little', 'yellow', 'normal', 'never', 'never', 'never', 'never'],
-        ['never', 'never', 'none', 'n/a', 'n/a', 'none', 'none', 'none', 'none'],
-        ['frequent, productive', 'occasional', 'little 20ml', 'clear/green', 'normal', 'none', 'none', 'none', 'none']
-    ];
-    let sql = 'INSERT INTO chest (cough, shortness_of_breath, sputum_baseline_volume, sputum_baseline_colour, sputum_baseline_consistency, chest_discomfort, chest_tightness, blood_in_sputum, fever ) VALUES ?';
-    db.query(sql, [cough], (err, result) => {
-        if(err) throw err;
-        console.log(result);
-        res.send('cough results added...');
-    });
-});
-
-  app.get('/createsinustable',(req, res) => {
-    var sql = "CREATE TABLE baseline_sinus (patient_id INT NOT NULL AUTO_INCREMENT, congestion VARCHAR(255), post_nasal_drip VARCHAR(255), facial_pain VARCHAR(255), headache VARCHAR(255), cough VARCHAR(255), baseline_score INT, FOREIGN KEY (patient_id) REFERENCES patients(patient_id))";
-    db.query(sql, function (err, result) {
-      if (err) throw err;
-      console.log(" sinus table created" + result);
-      res.send('sinus table working....')
-    });
-  });
-
-  app.get('/addsinusresults', (req, res) => {
-    let sinus = [
-        ['frequent', 'occasional', 'never', 'occasional', 'no', 4],
-        ['never', 'occasional', 'never', 'never', 'no', 2],
-        ['never','occasional', 'never', 'occasioanl','no', 3],
-        ['never','never', 'never', 'never', 'no', 0],
-        ['never', 'never', 'never', 'never', 'no', 0],
-        ['occasional', 'occasional', 'never', 'never', 'no', 3],
-        ['never', 'never', 'never', 'never', 'no', 0],
-        ['never', 'never', 'never', 'never', 'no', 0],
-        ['never', 'never', 'never', 'never', 'no', 0],
-        ['never', 'never', 'never', 'never', 'no', 0]
-    ];
-    let sql = 'INSERT INTO baseline_sinus (congestion, post_nasal_drip, facial_pain, headache, cough, baseline_score) VALUES ?';
-    db.query(sql, [sinus], (err, result) => {
-        if(err) throw err;
-        console.log(result);
-        res.send('sinus results added...');
-    });
-}); 
-
-  app.get('/creategitable',(req, res) => {
-    var sql = "CREATE TABLE gi (gi_id INT NOT NULL AUTO_INCREMENT, patient_id INT,  abdominal_discomfort VARCHAR(255), abdominal_cramps VARCHAR(255), constipation VARCHAR(255), bloating VARCHAR(255), diarrhea VARCHAR(255), nausea VARCHAR(255), vomitting VARCHAR(255), stool_consistency VARCHAR(255), haemorroids VARCHAR(255), toilet_frequency VARCHAR(255), PRIMARY KEY(gi_id), FOREIGN KEY (patient_id) REFERENCES patients(patient_id))";
-    db.query(sql, function (err, result) {
-      if (err) throw err;
-      console.log(" gi table created" + result);
-      res.send('gi table working....')
-    });
-  });
-
-  app.get('/addgiresults', (req, res) => {
-    let gi = [
-        ['never','never', 'never', 'never', 'never', 'never', 'never', 'normal', 'no', '>1'],
-        ['never', 'never', 'never', 'never', 'occasional', 'never', 'never', 'normal', 'no', '>1'],
-        ['occasional','occasional','never', 'never', 'never', 'never','never','normal', 'no','>1'],
-        ['never','never','never', 'never', 'never', 'never', 'never', 'normal', 'no', '>1'],
-        ['never','never', 'never', 'never', 'never', 'never', 'never', 'normal', 'no', '>1'],
-        ['never','occasional','occasional', 'occasional', 'never', 'never', 'never', 'hard', 'yes?', '>1'],
-        ['never', 'never','never', 'never', 'never', 'never', 'never','normal','no', '>1'],
-        ['never','never', 'never', 'never', 'never', 'never', 'never','normal','no', '>1'],
-        ['occasional','occasional', 'occasional','occasional', 'never', 'never', 'never', 'hard', 'no', '>1'],
-        ['never','never', 'never', 'never', 'never', 'never', 'never','normal','no', '>1']
-    ];
-    let sql = 'INSERT INTO gi (abdominal_discomfort, abdominal_cramps, constipation, bloating, diarrhea, nausea, vomitting, stool_consistency, haemorroids, toilet_frequency) VALUES ?';
-    db.query(sql, [gi], (err, result) => {
-        if(err) throw err;
-        console.log(result);
-        res.send('gi results added...');
-    });
-});
-
-
-  app.get('/createothertable',(req, res) => {
-    var sql = "CREATE TABLE other (other_id INT NOT NULL AUTO_INCREMENT, patient_id INT, sleeping VARCHAR(255), eating_appetite VARCHAR(255), drinking VARCHAR(255), medication_compliance VARCHAR(255), exercise VARCHAR(255), airway_clearance VARCHAR(255), PRIMARY KEY(other_id), FOREIGN KEY (patient_id) REFERENCES patients(patient_id))";
-    db.query(sql, function (err, result) {
-      if (err) throw err;
-      console.log(" other table created" + result);
-      res.send('other table working....')
-    });
-  });
-
-  app.get('/addotherresults', (req, res) => {
-    let other = [
-        ['normal','normal', 'normal', 'good', 'no exercise', 'sometimes'],
-        ['normal', 'poor appetite', 'normal', 'good', 'no exercise', 'sometimes'],
-        ['normal','normal','normal', 'good', 'very good', 'all of the time'],
-        ['normal','normal','normal', 'good', 'good', 'regularly'],
-        ['normal','normal','normal', 'very good', 'good', 'regularly'],
-        ['normal','normal','normal', 'good', 'good', 'regularly'],
-        ['normal','normal','normal', 'good', 'good', 'regularly'],
-        ['normal','normal','normal', 'good', 'very good', 'regularly'],
-        ['normal','normal','normal', 'good', 'good', 'regularly'],
-        ['normal','normal','normal', 'good', 'poor', 'Infrequent']
-    ];
-    let sql = 'INSERT INTO other (sleeping, eating_appetite, drinking, medication_compliance, exercise, airway_clearance) VALUES ?';
-    db.query(sql, [other], (err, result) => {
-        if(err) throw err;
-        console.log(result);
-        res.send('other results added...');
-    });
-});
-
-app.get('/getother', (req, res) => {
-    let sql = 'SELECT * FROM other';
-    let query = db.query(sql, (err, results) => {
-        if(err) throw err;
-        console.log(results);
-        res.send('other fetched...');
-    });
-});
-
 //create tables to be updated with patients responses
 
-app.get('/createupdatechesttable',(req, res) => {
-    var sql = "CREATE TABLE updatechest (patient_id INT, cough VARCHAR(255), shortness_of_breath VARCHAR(255), sputum_baseline_volume VARCHAR(255), sputum_baseline_colour VARCHAR(255), sputum_baseline_consistency VARCHAR(255), chest_discomfort VARCHAR(255), chest_tightness VARCHAR(255), blood_in_sputum VARCHAR(255), fever VARCHAR(255), baseline_score VARCHAR(255) ,FOREIGN KEY (patient_id) REFERENCES patients(patient_id))";
+app.get('/createupdatwobjectivetable',(req, res) => {
+  var sql = "CREATE TABLE updateObjective (patient_id INT, spirometer_yes VARCHAR(255), spirometer_no VARCHAR(255), spirometer_input VARCHAR(255), spirometer_percentage VARCHAR(255), oxygen_yes VARCHAR(255), oxygen_no VARCHAR(255), oxygen_input VARCHAR(255), temperature_yes VARCHAR(255), temperature_no VARCHAR(255), temperature_input VARCHAR(255), created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY (patient_id) REFERENCES patients(patient_id))";
+  db.query(sql, function (err, result) {
+    if (err) throw err;
+    console.log(" uppdate chest table created" + result);
+    res.send('update chest table working....')
+  });
+});
+
+app.get('/createupdatecoughtable',(req, res) => {
+    var sql = "CREATE TABLE updateCough (patient_id INT, cough VARCHAR(255), ordinarily VARCHAR(255), different VARCHAR(255), cough_period VARCHAR(255), sputum VARCHAR(255), colour VARCHAR(255), difColour VARCHAR(255), much VARCHAR(255), easily VARCHAR(255), blood VARCHAR(255), add_cough_treatment VARCHAR(255), other_cough_symp VARCHAR(255), severity_score INT(10), comparative_score INT(10), created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY (patient_id) REFERENCES patients(patient_id))";
+    db.query(sql, function (err, result) {
+      if (err) throw err;
+      console.log(" uppdate chest table created" + result);
+      res.send('update chest table working....')
+    });
+  });
+
+  app.get('/createupdatebreathtable',(req, res) => {
+    var sql = "CREATE TABLE updateBreath (patient_id INT, breath VARCHAR(255), breath_different VARCHAR(255), sudden VARCHAR(255), routine VARCHAR(255), affected VARCHAR(255), tightness VARCHAR(255), breath_add_treatment VARCHAR(255), breath_other_symp VARCHAR(255), severity_score INT(10), comparative_score INT(10), created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY (patient_id) REFERENCES patients(patient_id))";
+    db.query(sql, function (err, result) {
+      if (err) throw err;
+      console.log(" uppdate chest table created" + result);
+      res.send('update chest table working....')
+    });
+  });
+
+  app.get('/createupdatebloodtable',(req, res) => {
+    var sql = "CREATE TABLE updateBlood (patient_id INT, blood_in_sputum VARCHAR(255), red_flag_one VARCHAR(255), amount VARCHAR(255), period VARCHAR(255), unwell VARCHAR(255), blood_other_symp VARCHAR(255), severity_score INT(10), comparative_score INT(10), created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY (patient_id) REFERENCES patients(patient_id))";
+    db.query(sql, function (err, result) {
+      if (err) throw err;
+      console.log(" uppdate chest table created" + result);
+      res.send('update chest table working....')
+    });
+  });
+
+  app.get('/createupdatediscomforttable',(req, res) => {
+    var sql = "CREATE TABLE updateDiscomfort (patient_id INT, chest_discomfort VARCHAR(255), chest_period VARCHAR(255), start VARCHAR(255), red_flag_two VARCHAR(255), what VARCHAR(255), time VARCHAR(255), chest_worse VARCHAR(255), pain VARCHAR(255), chest_breathing VARCHAR(255), shortness_of_breath VARCHAR(255), chest_other_symp VARCHAR(255), severity_score INT(10), comparative_score INT(10), created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY (patient_id) REFERENCES patients(patient_id))";
     db.query(sql, function (err, result) {
       if (err) throw err;
       console.log(" uppdate chest table created" + result);
@@ -246,7 +148,7 @@ app.get('/createupdatechesttable',(req, res) => {
   });
 
   app.get('/createupdatesinustable',(req, res) => {
-    var sql = "CREATE TABLE updatesinus (patient_id INT, period VARCHAR(255), congestion VARCHAR(255), post_nasal_drip VARCHAR(255), facial_pain VARCHAR(255), headache VARCHAR(255), cough VARCHAR(255), add_treatment VARCHAR(255), other_symp VARCHAR(255),  basescore_result INT(10), comparative_score INT(10), created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY (patient_id) REFERENCES patients(patient_id))";
+    var sql = "CREATE TABLE updatesinus (patient_id INT, period VARCHAR(255), congestion VARCHAR(255), post_nasal_drip VARCHAR(255), facial_pain VARCHAR(255), headache VARCHAR(255), cough VARCHAR(255), add_treatment VARCHAR(255), other_symp VARCHAR(255),  severity_result INT(10), comparative_score INT(10), created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY (patient_id) REFERENCES patients(patient_id))";
     db.query(sql, function (err, result) {
       if (err) throw err;
       console.log(" update sinus table created" + result);
@@ -254,8 +156,10 @@ app.get('/createupdatechesttable',(req, res) => {
     });
   });
 
+
+
   app.get('/createUpdateConstipationTable',(req, res) => {
-    var sql = "Create TABLE updateconstipation (patient_id INT, constipation VARCHAR(255), constipation_period VARCHAR(255), constipation_bowel_motion VARCHAR(255), previous VARCHAR(255), constipation_abdominal_pain VARCHAR(255), bloated VARCHAR(255), passing_wind VARCHAR(255), constipation_eating VARCHAR(255), other_symp VARCHAR(255), created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY (patient_id) REFERENCES patients(patient_id))";
+    var sql = "Create TABLE updateConstipation (patient_id INT, constipation VARCHAR(255), constipation_period VARCHAR(255), constipation_bowel_motion VARCHAR(255), previous VARCHAR(255), constipation_abdominal_pain VARCHAR(255), bloated VARCHAR(255), passing_wind VARCHAR(255), constipation_eating VARCHAR(255), severity_result INT(10), comparative_score INT(10), created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY (patient_id) REFERENCES patients(patient_id))";
     db.query(sql, function (err, result) {
       if (err) throw err;
       console.log("table created" + result);
@@ -263,10 +167,45 @@ app.get('/createupdatechesttable',(req, res) => {
     });
   });
 
-  
+  app.get('/createupdateDiatable',(req, res) => {
+    var sql = "CREATE TABLE updateDiarrhoea (patient_id INT, diarrhoea VARCHAR(255), diarrhoea_period VARCHAR(255), diarrheoa_bowel_motion VARCHAR(255), still VARCHAR(255), diarrhoea_blood VARCHAR(255), diarrhoea_abdominal_pain VARCHAR(255), abdominal_cramps VARCHAR(255), diarrhoea_eating VARCHAR(255),  severity_result INT(10), comparative_score INT(10), created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY (patient_id) REFERENCES patients(patient_id))";
+    db.query(sql, function (err, result) {
+      if (err) throw err;
+      console.log(" update sinus table created" + result);
+      res.send('update sinus table working....')
+    });
+  });
 
-  app.get('/createupadteothertable',(req, res) => {
-    var sql = "CREATE TABLE updateother (patient_id INT, sleeping VARCHAR(255), eating_appetite VARCHAR(255), drinking VARCHAR(255), medication_compliance VARCHAR(255), exercise VARCHAR(255), airway_clearance VARCHAR(255), FOREIGN KEY (patient_id) REFERENCES patients(patient_id))";
+  app.get('/createupdateAb',(req, res) => {
+    var sql = "CREATE TABLE updateAbsominal (patient_id INT, abdominal_pain VARCHAR(255), abdominal_pain_period VARCHAR(255), abdominal_pain_sudden VARCHAR(255), all_time VARCHAR(255), deteriorate VARCHAR(255), severe VARCHAR(255), sharp VARCHAR(255), bowel_motion VARCHAR(255), abdominal_pain_diarrhoea VARCHAR(255), urine VARCHAR(255), abdominal_pain_eating VARCHAR(255), abdominal_pain_heartburn VARCHAR(255), severity_result INT(10), comparative_score INT(10), created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY (patient_id) REFERENCES patients(patient_id))";
+    db.query(sql, function (err, result) {
+      if (err) throw err;
+      console.log(" update sinus table created" + result);
+      res.send('update sinus table working....')
+    });
+  });
+
+  app.get('/createupdateVomit',(req, res) => {
+    var sql = "CREATE TABLE updateVomit (patient_id INT, vomit VARCHAR(255), whe VARCHAR(255), times VARCHAR(255), blood VARCHAR(255), vomit_eating VARCHAR(255), nauseous VARCHAR(255), vomit_abdominal_pain VARCHAR(255), severity_result INT(10), comparative_score INT(10), created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY (patient_id) REFERENCES patients(patient_id))";
+    db.query(sql, function (err, result) {
+      if (err) throw err;
+      console.log(" update sinus table created" + result);
+      res.send('update sinus table working....')
+    });
+  });
+
+
+  app.get('/createupdateHearttable',(req, res) => {
+    var sql = "CREATE TABLE updateHeartburn (patient_id INT, heartburn VARCHAR(255), heartburn_period VARCHAR(255), heartburn_times VARCHAR(255), heartburn_deteriorate VARCHAR(255), severity_result INT(10), comparative_score INT(10), created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY (patient_id) REFERENCES patients(patient_id))";
+    db.query(sql, function (err, result) {
+      if (err) throw err;
+      console.log(" update sinus table created" + result);
+      res.send('update sinus table working....')
+    });
+  });
+
+  app.get('/createaddupdatetable',(req, res) => {
+    var sql = "CREATE TABLE updateAdditional (patient_id INT, fever VARCHAR(255), appetite VARCHAR(255), sleeping VARCHAR(255), drinking VARCHAR(255), fatigue VARCHAR(255), FOREIGN KEY (patient_id) REFERENCES patients(patient_id))";
     db.query(sql, function (err, result) {
       if (err) throw err;
       console.log("update other table created" + result);
@@ -322,7 +261,7 @@ app.get('/update-sinus-questions', function(req, res) {
 
 ////////END QUESTIONS/////////////
 app.get('/createEndQuestion',(req, res) => {
-  var sql = "Create TABLE end_question (_id INT AUTO_INCREMENT PRIMARY KEY, id VARCHAR(255) NOT NULL, text VARCHAR(500), speechid VARCHAR(255), UNIQUE KEY unique_id (id))";
+  var sql = "Create TABLE end_question (_id INT AUTO_INCREMENT PRIMARY KEY, id VARCHAR(255) NOT NULL, text VARCHAR(1000), speechid VARCHAR(255), guide VARCHAR(1000), UNIQUE KEY unique_id (id))";
   db.query(sql, function (err, result) {
     if (err) throw err;
     console.log("table created" + result);
@@ -332,13 +271,25 @@ app.get('/createEndQuestion',(req, res) => {
 
 app.get('/addEndquestions', (req, res) => {
   let questions = [
-      ['end_sinus', 'Do you feel you have any other issue with chest pain or gastrointestinal?'],//red
-      ['end_chest', 'Do you feel you have any other issue with your sinuses or gastrointestinal?'],//green
-      ['end_gas', 'Do you feel you have any other issue with your sinuses or chest pain?'],
-      ['end_chest_branches', 'Are you having any other issues with your chest?'],
-      ['end_gas_barnches', 'Are you having any other gastrointestinal problems?'],//green
+      ['end_sinus', 'Do you feel you have any other issue with chest pain or gastrointestinal?', 'Chest Pain, Gastrointestinal or No'],//red
+      ['end_chest', 'Do you feel you have any other issue with your sinuses or gastrointestinal?', 'Sinuses, Gastrointestinal or No'],//green
+      ['end_gas', 'Do you feel you have any other issue with your sinuses or chest pain?', 'Sinuses, Chest Pain or No'],
+      ['end_cough_branch', 'Are you having any other issues with your chest?', 'Shortness of breath, Blood in Sputum, Chest Discomfort or None'],
+      ['end_breath_branch', 'Are you having any other issues with your chest?', 'Cough, Blood in Sputum, Chest Discomfort or None'],
+      ['end_blood_branch', 'Are you having any other issues with your chest?', 'Cough, Shortness of breath, Chest Discomfort or None'],
+      ['end_discomfort_branch', 'Are you having any other issues with your chest?', 'Cough, Shortness of breath, Blood in Sputum or None'],
+      ['end_con_barnch', 'Are you having any other gastrointestinal problems?', 'Diarrhoea, Abdominal Pain, Vomiting, Heartburn or Not at them Moment'],
+      ['end_dia_barnch', 'Are you having any other gastrointestinal problems?', 'Constipation, Abdominal Pain, Vomiting, Heartburn or Not at them Moment'],
+      ['end_ab_barnch', 'Are you having any other gastrointestinal problems?', 'Constipation, Diarrhoea, Vomiting, Heartburn or Not at them Moment'],
+      ['end_vom_barnch', 'Are you having any other gastrointestinal problems?', 'Constipation, Diarrhoea, , Abdominal Pain, Heartburn or Not at them Moment'],
+      ['end_heart_barnch', 'Are you having any other gastrointestinal problems?', 'Constipation, Diarrhoea, Abdominal Pain, Vomiting or Not at them Moment'],
+      ['end_mild', 'Thank you for visiting the Virtual Doctor. Your session with me is now over. Your details have been sent, monitor your symptoms over the next 24 hours and someone will call you in the next 24 hours. If you feel we have not met your needs or assessed you fully please contact the staff. Have a good day', 'Thank you for visiting the Virtual Doctor. Your session with me is now over. Your details have been sent, monitor your symptoms over the next 24 hours and someone will call you in the next 24 hours. If you feel we have not met your needs or assessed you fully please contact the staff. Have a good day'],
+      ['end_moderate', 'You have completed your session with me. Your details have been sent, Someone will call you in the next 24 hours. If you feel we have not met your needs or assessed you fully please contact the staff. Thank you for your visit today', 'You have completed your session with me. Your details have been sent, Someone will call you in the next 24 hours. If you feel we have not met your needs or assessed you fully please contact the staff. Thank you for your visit today'],
+      ['end_severe', 'The questionnaire is now complete. Your details have been sent, Someone will call you as early as possible. If you feel we have not met your needs or assessed you fully please contact the staff.', 'The questionnaire is now complete. Your details have been sent, Someone will call you as early as possible. If you feel we have not met your needs or assessed you fully please contact the staff.'],
+      ['end_urgent', 'Your session with me is over. Your details have been sent, please call the team as soon as possible.', 'Your session with me is over. Your details have been sent, please call the team as soon as possible.']
+      //green
   ];
-  let sql = 'INSERT INTO end_question (id, text) VALUES ?';
+  let sql = 'INSERT INTO end_question (id, text, guide) VALUES ?';
   db.query(sql, [questions], (err, result) => {
       if(err) throw err;
       console.log(result);
@@ -347,7 +298,7 @@ app.get('/addEndquestions', (req, res) => {
 }); 
 
 app.get('/update-end-questions', function(req, res) {
-  const sql = "SELECT  id, text, speechid FROM `end_question`";
+  const sql = "SELECT  id, text, speechid, guide FROM `end_question`";
   db.query(sql, function(err, result) {
       if(err) throw err;
       result.forEach(row => {
@@ -578,6 +529,66 @@ app.get('/createchestpaintable',(req, res) => {
         res.send('questions are added...');
     });
 });
+
+app.get('/update-chestpain-questions', function(req, res) {
+  const sql = "SELECT id, text, speechid FROM `chest_discomfort_question`";
+  db.query(sql, function(err, result) {
+      if(err) throw err;
+      result.forEach(row => {
+          var fileId = crypto.createHash("md5").update(row.text).digest("hex");
+          db.query("UPDATE `chest_discomfort_question` SET speechid = ? WHERE id = ?", [fileId, row.id], function(err, result) {
+              if(err) throw err;
+              console.log(row);
+              console.log("1 record updated");
+              // res.end();
+          });
+      })
+      res.end(JSON.stringify(result));
+  });
+});
+
+app.get('/createbranchtable',(req, res) => {
+  var sql = "Create TABLE chest_branch_question (_id INT AUTO_INCREMENT PRIMARY KEY, id VARCHAR(255) NOT NULL, text VARCHAR(500), speechid VARCHAR(500), guide VARCHAR(500), UNIQUE KEY unique_id (id))";
+  db.query(sql, function (err, result) {
+    if (err) throw err;
+    console.log("table created" + result);
+    res.send('chest pain question table working....')
+  });
+});
+
+app.get('/addbranchtable', (req, res) => {
+  let questions = [
+      ['sometimes','Are you having pain ot discomfort sometimes?', 'Documenting answers.<br>There is no specific answer required'],//grey
+      ['often','How often?', 'Documenting answers.<br>There is no specific answer required']//grey
+  ];
+
+  let sql = 'INSERT INTO chest_branch_question  (id, text, guide) VALUES ?';
+  db.query(sql, [questions], (err, result) => {
+      if(err) throw err;
+      console.log(result);
+      res.send('questions are added...');
+  });
+})
+
+
+  app.get('/update-branch-questions', function(req, res) {
+    const sql = "SELECT id, text, speechid FROM `chest_branch_question`";
+    db.query(sql, function(err, result) {
+        if(err) throw err;
+        result.forEach(row => {
+            var fileId = crypto.createHash("md5").update(row.text).digest("hex");
+            db.query("UPDATE `chest_branch_question` SET speechid = ? WHERE id = ?", [fileId, row.id], function(err, result) {
+                if(err) throw err;
+                console.log(row);
+                console.log("1 record updated");
+                // res.end();
+            });
+        })
+        res.end(JSON.stringify(result));
+    });
+  });
+
+
 
 app.get('/update-chestpain-questions', function(req, res) {
   const sql = "SELECT id, text, speechid FROM `chest_discomfort_question`";
@@ -917,4 +928,78 @@ app.get('/update-heartburn-questions', function(req, res) {
       res.end(JSON.stringify(result));
   });
 });
+
+
+
+
+app.get('/createobjectivetable',(req, res) => {
+  var sql = "Create TABLE objective_question (_id INT AUTO_INCREMENT PRIMARY KEY, id VARCHAR(255) NOT NULL, text VARCHAR(500), speechid VARCHAR(500), guide VARCHAR(500), UNIQUE KEY unique_id (id))";
+  db.query(sql, function (err, result) {
+    if (err) throw err;
+    console.log("table created" + result);
+    res.send('objective question table working....')
+  });
+});
+
+app.get('/addobquestions', (req, res) => {
+  let questions = [
+      ['spirometer', 'We would like to know what your lung function is, do you think you can check your lung function using your spirometer?', 'Yes or No'],
+      ['spirometer_ready', 'Are you ready to check your lung function with me?', 'Yes or No'],
+      // ['spirometer_yes', 'Please check your lung function 3 times as previously instructed and enter the best result now?', 'TODO'],
+      ['spirometer_no', 'Please enter a reason for not completing spirometry (No equipment, Not well enough, Other)', 'No equipment, Not well enough, Other'],
+      ['spirometer_location', 'Before you begin please check your surroundings. We advise you to find somewhere safe, secure and comfortable so that you won’t be disturbed and you can concentrate on your lung function assessment. Are you ready to progress with the procedure?', 'Yes or No'],
+      ['spirometer_equipment', 'Let us double check you have everything you need. Please ensure you have your spirometer, a new blue filter and a nose clip if you use one. Please remove the blue filter from the plastic packaging and attach it to the spirometer. Now please turn on your spirometer. You may need to give the spirometer a moment or two to start up. You may need to replace the batteries in the device if it does not turn on. Would you like to continue in checking your lung function?', 'Yes or No'],
+      ['spirometer_prepare', 'You are almost ready to check your lung function. Please take up whatever position, sitting or standing, you ordinarily would when checking your lung function. Take a moment to relax and prepare to blow. Please check the device is still turned on. The screen will show a picture of a head making a blowing movement. The device is ready when this is showing.', 'Yes or No'],
+      ['nose_clip', 'Please place the nose clip on your nose if you ordinarily use one?', 'Yes or No'],
+      ['ready', 'When you are ready, please perform an effort. Remember to inhale as deeply as you can, then with as little delay as possible form a good seal with your mouth around the mouthpiece and exhale as quickly and forcefully as you can. Remember your technique and what you have been instructed to do previously. Finally, remember, when checking your lung function using this device, you do not need to continue blowing. One or two seconds is plenty.', 'Yes or No'],
+      ['complete', 'Effort complete?', 'Yes or No'],
+      ['spirometer_fin', 'Well done. Take a moment to relax now that you have finished. Remove the nose clip and sit down for a moment to recover. Please note the reading on your device. Two different numbers will appear on the screen in an alternating manner. Please note the value in litres. It will likely be in the region of 1.0 to 5.0 litres. Write this down if you can as you will need to enter it shortly.', 'Yes or No'],
+      ['spirometer_details', 'Please enter your lung function as it was displayed on the device and select “Next” to continue.', 'Yes or No'],
+      ['spirometer_retake', 'Take a minute or two before you perform your next effort. Select “Next Blow” to perform your next effort or “Spirometry complete” if you have completed a minimum of three blows and want to move onto checking your oxygen levels.', 'Yes or No'],
+      ['oxygen', 'We would like to know what your oxygen saturations are, do you think you can check your oxygen saturations using your finger probe pulse oximeter?', 'Yes or No'],
+      ['oxygen_no', 'Please enter a reason for not checking your oxygen saturations. (No equipment, Not well enough, Other)', 'No equipment, Not well enough, Other'],
+      // ['oxygen_yes', 'Please check your percentage oxygen saturation using your finger probe pulse oximeter and enter your percentage oxygen saturation', 'TODO'],
+      ['oxygen_location', 'Before you begin please check your surroundings. We advise you to find somewhere safe, secure and comfortable so that you won’t be disturbed and you can concentrate on your oxygen saturation assessment.', 'TODO'],
+      ['oxygen_equipment', 'Please check you have your finger tip pulse oximeter with you. Please turn on your pulse oximeter as previously instructed. If it does not turn on, please check the batteries and replace them if needed. Please allow a few moments for the pulse oximeter to stabilise.', 'TODO'],
+      ['oxygen_prepare', 'Prepare to check your oxygen saturation. Please take a few moments and sit quietly. Allow yourself to catch your breath and allow your breathing to relax. Take a few deep breaths if you need. Please ensure your hands are clean and dry. You will need to ensure your nails are clean and free from varnish or other materials.', 'TODO'],
+      ['oxygen_ready', 'When you are comfortable and ready, please place the pulse oximeter securely on one of your index fingers. Please allow a few moments before checking the reading. Please note this may take a few moments. Please write down the value. If you are not getting a reading you may need to try a different finger.', 'TODO'],
+      ['oxygen_details', 'Please enter your lung function as it was displayed on the device and select “Next” to continue.', 'TODO'],
+      ['oxygen_retake', 'Take a minute or two before you perform your next effort. Select “Next Blow” to perform your next effort or “Spirometry complete” if you have completed a minimum of three blows and want to move onto checking your oxygen levels.', 'TODO'],
+      ['temperature', 'We would like to know what your body temperature is, do you think you can check your temperature using your thermometer?', 'Yes or No'],
+      ['temperature_ready', 'Are you ready to check your temperature? ', 'TODO'],
+      ['temperature_location', 'Before you begin please check your surroundings. We advise you to find somewhere safe, secure and comfortable so that you won’t be disturbed and you can concentrate on your temperature measurement.', 'TODO'],
+      ['temperature_equipment', 'Please check you have your infrared thermometer with you. Please turn on your thermometer as previously instructed. If it does not turn on, please check the batteries and replace them if needed. Please allow a few moments for the thermometer to stabilise.', 'TODO'],
+      ['temperature_prepare', 'Prepare to check your temperature. Please take a few moments and sit quietly. Please remove and headware such as hats. Please ensure your forehead is dry. Please ensure your hair is pushed back off your forehead.', 'TODO'],
+      ['temperature_comfortable', 'When you are comfortable and ready, please check your temperature by holding the thermometer close to your forehead and pressing the button. The thermometer should beep when it has read your temperature. Please write down the value. If you are not getting a reading you may need to repeat the process.', 'TODO'],
+      ['temperature_details', 'Please input your temperature value and select “Next” to continue.', 'TODO'],
+      ['temperature_retake', 'Please select “Temperature assessment complete” to move on and complete your assessments or “Repeat Temperature assessment” if you need to repeat the measurement or re-enter your result.', 'TODO'],
+      ['temperature_no', 'Please enter a reason for not checking your temperature.(No equipment, Not well enough, Other)', 'No equipment, Not well enough, Other']
+  ];
+
+  let sql = 'INSERT INTO objective_question  (id, text, guide) VALUES ?';
+  db.query(sql, [questions], (err, result) => {
+      if(err) throw err;
+      console.log(result);
+      res.send('questions are added...');
+  });
+});
+
+app.get('/update-ob-questions', function(req, res) {
+  const sql = "SELECT id, text, speechid FROM `objective_question`";
+  db.query(sql, function(err, result) {
+      if(err) throw err;
+      result.forEach(row => {
+          var fileId = crypto.createHash("md5").update(row.text).digest("hex");
+          db.query("UPDATE `objective_question` SET speechid = ? WHERE id = ?", [fileId, row.id], function(err, result) {
+              if(err) throw err;
+              console.log(row);
+              console.log("1 record updated");
+              // res.end();
+          });
+      })
+      res.end(JSON.stringify(result));
+  });
+});
+
+
 };

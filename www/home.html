@@ -5,8 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" charset="utf-8">
     <meta name="description" content="virtual doctor in CF office. With a input text panel. speech input panels ">
     <meta name="theme-color" content="#000000"/>
+
+    <link rel="icon" type="image/x-icon" href="assets/images/favicon.ico" />
     
-     <title>Virtual Doctor Project</title>
+    <title>Virtual Doctor Project</title>
     
     <script src="lib/angular.js"></script>
     <script src="lib/three.js"></script>
@@ -26,184 +28,170 @@
     <script src="js/questionEndService.js"></script>
     <script src="js/questionSinusService.js"></script>
     <script src="js/questionGiService.js"></script>
+    <script src="js/questionbranchService.js"></script>
     <script src="js/questionChestService.js"></script>
     <script src="js/recordService.js"></script>
     <script src="js/sendFileService.js"></script> 
     <script src="js/textFileService.js"></script> 
     <script src="js/accountService.js"></script> 
+    <script src="js/questionObjectiveService.js"></script>
+    <script src="//ajax.googleapis.com/ajax/libs/angularjs/1.3.15/angular-sanitize.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.9/angular-route.js"></script>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/js/bootstrap.min.js"></script>
     <link type="text/css" href="css/main.css" rel="stylesheet" />
     <link href="//netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
 </head>
 <body ng-app="virtualDr" ng-controller="playerController" style="overflow: hidden">
-    
-    <!-- <div ng-controller="PatientController">
-        <form novalidate class="simple-form">
-            <label>Name: <input type="text" ng-model="user.name" /></label><br />
-            <input type="submit" ng-click="update(user)" value="Save" />
-        </form>
-        <pre>{{user.name}}</pre>
-    </div> -->
-    
-    
-    <div class="anim-object active" id="box-object-gradient-hor" style="animation: 8s ease 0s 1 normal both running bg-pan-left;"></div>
 
-    <p>
-        <audio id=recordedAudio></audio>
-    </p>
 
     <div id="scene"></div>
 
-    <fieldset id="subtitles">
-        <legend>Doctor says:</legend>
-        {{data.subtitles}}
-    </feildset>
+    <div>
+        <fieldset id="subtitles">
+            <legend>Doctor says:</legend>
+            <p ng-hide="doctor">{{data.subtitles}}</p>
+        </feildset>
+    </div>
 
-    <fieldset class="inputText">
-        <legend>Type here:</legend>
-        <textarea id="textBox" rows="2" cols="70"></textarea>
-        <label for="textBox"></label>
-        <button type="button" id ="submitBtn" ng-click="getTextInput()">Submit</button>
-    </fieldset>
-    
-    <fieldset class="words">
+    <fieldset class="words" id="words">
         <legend>You say:</legend>
         <p></p>
     </fieldset>
 
-      
+    <div class="modal fade" id="videoModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+          <div class="modal-content">
+            <div class="modal-body">
+              <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+              <video controls width="100%">
+                <source src="" type="video/mp4">
+              </video>
+            </div>
+          </div>
+        </div>
+      </div>
+
+
     <div id="interactivePanel">
+        
+        <div id="img">
+            <img ng-src="{{data.images}}" alt=""/>
+        </div>
+
         <div id="mic">
             <span><i class="cmn-t-pulse fa fa-microphone circle"></i></span>
         </div> 
         
-          
-        <div id="startButton">
-            <div ng-if="line==undefined">
-                <button class="btn" ng-click="startScript()">Start Recording...</button>
-            </div>
+        <div id="startBtn">
+                <button class="myButton" ng-click="startScript()" ng-if="line==undefined">Start Visit</button>
+                <button class="myButton video" data-video="assets/images/video.mp4" data-toggle="modal" data-target="#videoModal" ng-hide="hidePlay">Play Video</button>
         </div>
 
-        <div id="startUp" ng-show="showStart">
-            <h1>Welcome</h1>
-            <p>{{start}}</p>
 
+        <!-- <button type="button" id="submitBtn" class="myButton" ng-click="startCough()" ng-hide="showCough">Cough</button> -->
+
+        <div id="nextBtn">
+            <button class="myButton" id="yesBtn"  ng-click="startSpiroScript()" ng-show="showYesBtn">Yes</button>
+            <button class="myButton" ng-click="startAllSpiroScript()" ng-show="showNextBtn">Next</button>
+            <button class="myButton" ng-click="completeSpiro()" ng-show="showCompleteBtn">Complete</button>
+
+            <button class="myButton" id="yesOBtn" ng-click="startOxygenScript()" ng-show="showOxygenBtn">Yes</button>
+            <button class="myButton" ng-click="startAllOxygenScript()" ng-show="showOxygenNextBtn">Next</button>
+            <button class="myButton" ng-click="completeOx()" ng-show="showCompleteOx">Complete</button>
+
+            <button class="myButton" id="tBtn"ng-click="startTempScript()" ng-show="showTempBtn">Next</button>
+            <button class="myButton" ng-click="completeT()" ng-show="showCompleteT">Complete</button>
+        </div>
+
+        <div id="noBtn">
+            <button class="myButton" id="sNoBtn" ng-click="startSpiroNoScript()" ng-show="showSNoBtn">Cancel</button>
+            <button class="myButton" ng-click="notCompleteSpiro()" ng-show="showNotFin">No</button>
+            <button class="myButton" ng-click="nextBlow()" ng-show="showNextBlowBtn">Next Blow</button>
+
+            <button class="myButton" id="oNoBtn"ng-click="startOxygenNoScript()" ng-show="showONoBtn">Cancel</button>
+            <button class="myButton" ng-click="repeatAssessment()" ng-show="showRepeatBtn">Repeat Assessment</button>
+
+            <button class="myButton" id="tNoBtn" ng-click="startTempNoScript()" ng-show="showTNoBtn">Cancel</button>
+            <button class="myButton" ng-click="repeatTAssessment()" ng-show="showRepeatTBtn">Repeat Assessment</button>
+        </div>
+
+        <div id="startUp" ng-if="showStart">
+            <h1>Welcome</h1>
+            <p ng-bind-html="start"></p>
         </div>
 
         <div id="reasonBtns" ng-show="showReason">
-            <h1>Please indicate what the problem is from the options... </h1>
+            <h1>Please indicate from list: </h1>
             <p>{{firstReason}}</p>
             <p>{{secondReason}}</p>
             <p>{{thirdReason}}</p>
             <p>{{otherReason}}</p>
         </div>
 
-        <div id="reasonBtns" ng-show="showOtherReason">
-            <h1>Please indicate what the problem is from the options... </h1>
-            <p>{{secondReason}}</p>
-            <p>{{thirdReason}}</p>
-            <p>{{firstReason}}</p>
-            <p>{{noReason}}</p>
+        <div id="reasonBtns" ng-show="showChest">
+            <h1>Please indicate from list:</h1>
+            <p>{{firstChest}}</p>
+            <p>{{secondChest}}</p>
+            <p>{{thirdChest}}</p>
+            <p>{{fourChest}}</p>
         </div>
 
-        <div id="timeBtns" ng-show="showTime">
-                <h1>Please indicate from the options below... </h1>
-                <p>{{firstTime}}</p>
-                <p>{{secondTime}}</p>
-                <p>{{thirdTime}}</p>
+        <div id="reasonBtns" ng-show="showGi">
+            <h1>Please indicate from list:</h1>
+            <p>{{firstGi}}</p>
+            <p>{{secondGi}}</p>
+            <p>{{thirdGi}}</p>
+            <p>{{fourGi}}</p>
+            <p>{{fiveGi}}</p>
         </div>
 
-        <div id="YNBtns" ng-show="showYN">
-                <h1>Please indicate from the options below... </h1>
-                <p>Yes</p>
-                <p>No</p>
+        <div>
+            <h1 ng-show="bye">GoodBye</h1>
+            <div id="dataGuide" ng-bind-html="data.guide"></div>
+            <button class="myButton" ng-click="endScript()" ng-show="endVisit">Finished</button>
         </div>
 
-        <div id="DocAn" ng-show="doc">
-            <p>In this section I will just document your answers, there is no right or wrong answers here </p>
-        </div>
+        <fieldset class="inputText" ng-show="showTextInput"> 
+            <label class="line"for="textBox">Type in here:</label>
+            <textarea id="textBox"></textarea>
+            <button type="button" id="submitBtn" class="myButton" ng-click="getSpirometerInput()" ng-show="showSpirometerInput">Submit Spirometer</button>
+            <button type="button" id="submitBtn" class="myButton" ng-click="getOxygenInput()" ng-show="showOxygenInput">Submit Oxygen</button>
+            <button type="button" id="submitBtn" class="myButton" ng-click="getTemperatureInput()" ng-show="showTemperatureInput">Submit Temperature</button>
+        </fieldset>
 
-        <div id="mild">
-            <h1>GoodBye</h1>
-            <p>Your details have been sent, monitor your symptoms over the next 24 hours and someone will call you in the next 24 hours. If you feel we have not met your needs or assessed you fully please contact the staff.
-            </p>
-        </div>
+        <div class="tool">
+            <button class="helpButton" ng-click="reloadPage()" ng-show="showRefresh">Refresh</button>
+            <div class="tooltext">If you get into any difficulties press the "Refresh" button to refresh the page.</div>
+       </div>
 
-        <div id="moderate">
-            <h1>GoodBye</h1>
-            <p>Your details have been sent, Someone will call you in the next 24 hours. If you feel we have not met your needs or assessed you fully please contact the staff.
-            </p>
-        </div>
+       <div class="tool2">
+            <button class="helpButton" ng-click="restartReasons()" ng-show="showRepeat">Repeat</button> 
+            <button class="helpButton" ng-click="restartChestReasons()" ng-show="showChestRepeat">Repeat</button> 
+            <button class="helpButton" ng-click="restartGiReasons()" ng-show="showGiRepeat">Repeat</button> 
+            <div class="tooltext2">If it looks like I have not heard your answer and I have not asked you to repeat your answer please press "Repeat" and repeat your answer again</div>
+       </div>
+   
 
-        <div id="severe">
-            <h1>GoodBye</h1>
-            <p>Your details have been sent, Someone will call you as early as possible. If you feel we have not met your needs or assessed you fully please contact the staff
-            </p>
-        </div>
-
-        <div id="urgent">
-            <h1>GoodBye</h1>
-            <p>Your details have been sent, please call the team as soon as possible.
-            </p>
-        </div>
-
-        <div id="chestReasons" ng-show="chestReason">
-                <h1>Please indicate what the problem is from the options... </h1>
-                <p>A Cough</p>
-                <p>Shortness of breath</p>
-                <p>Blood in sputum</p>
-                <p>Chest discomfort</p> 
-        </div>
-
-        <div id="chestReasons" ng-show="otherchestReason">
-            <h1>Please indicate what the problem is from the options... </h1>
-            <p>A Cough</p>
-            <p>Shortness of breath</p>
-            <p>Blood in sputum</p>
-            <p>Chest discomfort</p> 
-            <p>Next</p>
-        </div>
-
-        <div id="chestReasons" ng-show="showColour">
-            <h1>Please indicate what the problem is from the options... </h1>
-            <p>Clear</p>
-            <p>Green</p>
-            <p>Yellow</p>
-            <p>Brown</p>
-        </div>
-
-        <div id="chestReasons" ng-show="showAmount">
-            <h1>Please indicate what the problem is from the options... </h1>
-            <p>None</p>
-            <p>Normal</p>
-            <p>More than normal</p>
-            <p>Alot more than normal</p>
-        </div>
-
-        <div id="chestReasons" ng-show="showBetter">
-            <h1>Please indicate what the problem is from the options... </h1>
-            <p>Better</p>
-            <p>same</p>
-            <p>worse</p>
-        </div>
-
-        <div id="gasReasons">
-                <h1>Please indicate what the problem is from the options... </h1>
-                <p>Constipation</p>
-                <p>Diarrhoea</p>
-                <p>Abdominal pain</p>
-                <p>Vomiting</p>
-                <p>Heartburn</p>   
-        </div>
-
-        <div id="bowlMovement">
-                <h1>Please indicate how many it is from the options... </h1>
-                <p>1 to 3</p>
-                <p>3 to 6</p>
-                <p>more than 6</p>  
-        </div>
     </div>
 
-
+    <script>
+        $(function() {
+            $(".video").click(function () {
+                var theModal = $(this).data("target"),
+                videoSRC = $(this).attr("data-video"),
+                videoSRCauto = videoSRC + "";
+                $(theModal + ' source').attr('src', videoSRCauto);
+                $(theModal + ' video').load();
+                $(theModal + ' button.close').click(function () {
+                    $(theModal + ' source').attr('src', videoSRC);
+                    $(theModal + ' video').trigger('pause')
+                });
+            });
+        });
+    </script>
+  
 </body>
 </html>
 

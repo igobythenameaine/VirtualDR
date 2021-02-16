@@ -39,8 +39,8 @@ words.appendChild(p);
 
             recognizer.addEventListener('error', function (event) {
                 console.log('Recognition error');
-                document.getElementById("mic").style.visibility = "hidden";
-                reject('An error has occurred while recognizing: ' + event.error);
+                 document.getElementById("mic").style.visibility = "hidden";
+                reject('An error has occurred while recognizing: ' + event.error); //handle
             });
 
             recognizer.addEventListener('nomatch', function (event) {
@@ -51,10 +51,11 @@ words.appendChild(p);
 
             recognizer.addEventListener('end', function (event) {
                 console.log('Recognition ended');
-                document.getElementById("mic").style.visibility = "hidden";
-                reject('Error: sorry but I could not recognize your speech');
-            });
-
+                    document.getElementById("mic").style.visibility = "hidden";
+            reject('Error: sorry but I could not recognize your speech'); //handl
+        });
+           
+            document.getElementById("mic").style.visibility = "visible";
             console.log('Recognition started');
             recognizer.start();
         });

@@ -11,7 +11,7 @@ module.exports = function (app, db) {
             cough,
             add_treatment,
             other_symp, 
-            basescore_result,
+            severity_result,
             comparative_score 
         } = req.body;
 
@@ -24,7 +24,7 @@ module.exports = function (app, db) {
             "`cough`," +  
             "`add_treatment`," + 
             "`other_symp`," +
-            "`basescore_result`," +
+            "`severity_result`," +
             "`comparative_score`," +
             "`patient_id`" + 
             ") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
@@ -38,7 +38,7 @@ module.exports = function (app, db) {
             cough,
             add_treatment,
             other_symp,
-            basescore_result,
+            severity_result,
             comparative_score,
             id
         ] , function(err, result) {

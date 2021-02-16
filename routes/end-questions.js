@@ -2,7 +2,7 @@
 //prepare sinus questions from database
 
 module.exports = function (app, db, scenarioHelper) {
-    const sql = "SELECT id, text, speechid FROM `end_question`";
+    const sql = "SELECT id, text, speechid, guide FROM `end_question`";
     //parpare questions and call ttsHelper to generate mp3, json and txt file from sinus_questions
     db.query(sql, function(err, result) {
         if(err) throw err;

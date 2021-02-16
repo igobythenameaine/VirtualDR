@@ -3,17 +3,17 @@ var path  = require("path");
 var mysql = require('mysql');
 var bodyParser = require('body-parser');
 var fs = require('fs');
-var nodemailer = require('nodemailer');
 
 //for college server mysqli_connect('cs1.ucc.ie', 'ac57', 'siosh', 'mscim2019_ac57');
 
 //start mysql connection
 var db = mysql.createConnection({
-    host: "192.168.64.2",
-    user: "aine",
-    password: "aine",
-    database: "pdb"
+    host: "xxxxx",
+    user: "xxxx",
+    password: "xxx",
+    database: "xxxx"
 });
+
 
 db.connect(function(err) {
     if (err) throw(err);
@@ -62,19 +62,27 @@ app.get('/', function(req, res) {
 });
 
  //connect routes
- require('./routes/upload-recordings')(app);
  require('./routes/create-tables')(app, db);
- require('./routes/text-file')(fs, db, app);
- require('./routes/send-mail')(app, fs, nodemailer);
  require('./routes/sinus-questions')(app, db, scenarioHelper);
  require('./routes/end-questions')(app, db, scenarioHelper);
+ require('./routes/objective-questions')(app, db, scenarioHelper);
  require('./routes/accounts')(app, db);
  require('./routes/basescores')(app, db);
  require('./routes/chest-question')(app, db, scenarioHelper);
  require('./routes/gi-questions')(app, db, scenarioHelper);
+ require('./routes/branch-questions')(app, db, scenarioHelper);
+ require('./routes/updateTables/Gi/abdominal')(app, db);
+ require('./routes/updateTables/Gi/constipation')(app, db);
+ require('./routes/updateTables/Gi/diarrhoea')(app, db);
  require('./routes/updateTables/sinus')(app, db);
- require('./routes/updateTables/constipation')(app, db);
-
+ require('./routes/updateTables/Gi/vomit')(app, db);
+ require('./routes/updateTables/Gi/heartburn')(app, db);
+ require('./routes/updateTables/Chest/cough')(app, db);
+ require('./routes/updateTables/Chest/breath')(app, db);
+ require('./routes/updateTables/Chest/blood')(app, db);
+ require('./routes/updateTables/Chest/discomfort')(app, db);
+ require('./routes/updateTables/Chest/additional')(app, db);
+ require('./routes/updateTables/objective')(app, db);
  //create app server
 
 app.listen(config.port, function () {

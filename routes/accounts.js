@@ -42,7 +42,7 @@ module.exports = function (app, db) {
         var id = req.params.id
 
         if (id) {
-            db.query('SELECT patient_id, sinus_basescore, chest_basescore, gi_basescore FROM patients WHERE patient_id = ?',
+            db.query('SELECT patient_id, sinus_basescore, chest_basescore, gi_basescore, gender, age, height, blf FROM patients WHERE patient_id = ?',
                 [id], function (error, result) {
                     if (error) throw error;
                     console.log(result[0]);

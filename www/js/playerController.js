@@ -1,19 +1,23 @@
 ﻿
 app.controller("playerController",
- ['$scope','recordService','textFileService','sendFileService','questionGiService','questionChestService', 'questionSinusService', 'questionEndService', 'patientService', 'speechService', 'sceneService', 'avatarService', 'scriptService','accountService', 
- function ($scope, recordService, textFileService, sendFileService, questionGiService, questionChestService, questionSinusService, questionEndService, patientService, speechService, sceneService, avatarService, scriptService, accountService) {
-    console.log("Initialising PC");
+ ['$scope', 'questionbranchService','questionGiService','questionChestService', 'questionSinusService', 'questionEndService', 'patientService', 'speechService', 'sceneService', 'avatarService', 'scriptService','accountService', 'questionObjectiveService', 
+ function ($scope, questionbranchService, questionGiService, questionChestService, questionSinusService, questionEndService, patientService, speechService, sceneService, avatarService, scriptService, accountService, questionObjectiveService) {
     
-    const names = ['John', 'Paul', 'Sarah']; 
+    let myobj = document.getElementById("words");
+
     let sinusScore = 0;
     let chestScore = 0;
     let giScore = 0;
+    let obScore = 0;
 
     let chestQuestions;
     let chestQuestionKeys;
 
     let endQuestions;
     let endQuestionKeys;
+
+    let obQuestions;
+    let obQuestionKeys;
 
     let sinusQuestions;
     let sinusQuestionKeys;
@@ -24,18 +28,22 @@ app.controller("playerController",
     let accounts;
 
     let patientId;
+   
+    let lfReadings = [];
 
     var sinuses = {};
-    var end = {};
     var gi = {};
     var chest = {};
+    var ob = {};
 
     $scope.data = {};
     $scope.data.subtitles = " ";
     $scope.data.line = {};
    
+    $scope.data.guide = " ";
+    $scope.data.images = " ";
 
-    $scope.start = "This aplication is going to ask a number of question about your health most of the required answers will be indicated in this panel.Questions will be spoken or can be read in the 'doctor says' panel.This application records the conversation for training purposes If you wish to proceed press the start recording button"
+    $scope.start = "This aplication is going to ask a number of questions about your health.If you would like to watch a video on how to use the virtual doctor tool, select 'play video'. If you wish to proceed with the visitation press the 'start visit' button"
     $scope.showStart = true;
     
     $scope.firstReason = "Chest pain"
@@ -44,13 +52,17 @@ app.controller("playerController",
     $scope.otherReason = "Other"
     $scope.noReason = "No"
 
-   
-    $scope.firstTime = "24 hours"
-    $scope.secondTime = "Less than a week"
-    $scope.thirdTime = "More than a week"
-  
+    $scope.firstChest = "Cough"
+    $scope.secondChest = "Shortness of breath"
+    $scope.thirdChest = "Blood in Sputum"
+    $scope.fourChest = "Chest discomfort"
 
-
+    $scope.firstGi = "Constipation"
+    $scope.secondGi = "Diarrhoea"
+    $scope.thirdGi = "Abdominal Pain"
+    $scope.fourGi = "Vomiting"
+    $scope.fiveGi = "Heartburn"
+    
     $scope.lookingAt = "default";
 
     var self = this;
@@ -58,7 +70,7 @@ app.controller("playerController",
     self.tweens = [];
 
             
-    window.addEventListener("mousemove", onmousemove, false);
+    // window.addEventListener("mousemove", onmousemove, false);
   
     //condition pattern for keywords
     var conditionsTwo = /\bno\b|\bnope\b|\bI don't think so\b|\bI doubt it\b|\bI would not think do\b|\b I would not say so\b|\bI am not bad\b|\bI don't\b|\bNo problem\b|\bit's not a problem\b|\bit's not an issue\b/;
@@ -125,7 +137,11 @@ app.controller("playerController",
 
     async function initialise() {
 
-        //get all sinus questions from database
+        // get patient id from cookie
+        const patientIdCookie = document.cookie.split(';').find(cookie => cookie.startsWith('patientId')); 
+        patientId = patientIdCookie.split('=')[1];
+
+        //get all questions from database
 
         sinusQuestions = await questionSinusService.getAll();
         sinusQuestionKeys = Object.keys(sinusQuestions);
@@ -135,9 +151,6 @@ app.controller("playerController",
         giQuestions = await questionGiService.getAll();
         giQuestionKeys = Object.keys(giQuestions);
         console.log(giQuestions, giQuestionKeys);
-        // get patient id from cookie
-        const patientIdCookie = document.cookie.split(';').find(cookie => cookie.startsWith('patientId')); 
-        patientId = patientIdCookie.split('=')[1];
 
         accounts = await accountService.getPatient(patientId);
         console.log(accounts);
@@ -148,24 +161,21 @@ app.controller("playerController",
 
         endQuestions = await questionEndService.getAll();
         endQuestionKeys = Object.keys(endQuestions);
-
         console.log(endQuestions, endQuestionKeys);
 
-        document.getElementById("startUp").style.visibility = "visible"; 
+        obQuestions = await questionObjectiveService.getAll();
+        obQuestionKeys = Object.keys(obQuestions);
+        console.log(obQuestions, obQuestionKeys);
 
+        branchQuestions = await questionbranchService.getAll();
+        branchQuestionKeys = Object.keys(branchQuestions);
+        console.log(branchQuestions, branchQuestionKeys);
+
+
+        //hide mic upon loading
         document.getElementById("mic").style.visibility = "hidden";
-        //document.getElementById("reasonBtns").style.visibility = "hidden";
-       // document.getElementById("chestReasons").style.visibility = "hidden";
-        document.getElementById("gasReasons").style.visibility = "hidden";
-        // document.getElementById("timeBtns").style.visibility = "hidden";
-        // document.getElementById("YNBtns").style.visibility = "hidden";
-        document.getElementById("bowlMovement").style.visibility = "hidden";
-        document.getElementById("mild").style.visibility = "hidden";
-        document.getElementById("moderate").style.visibility = "hidden";
-        document.getElementById("severe").style.visibility = "hidden";
-        document.getElementById("urgent").style.visibility = "hidden";
-      //  document.getElementById("DocAn").style.visibility = "hidden";
-
+        
+        //initialise 3D scene and avatar  
         scene = new THREE.Scene();
         webGL = new WebGL();
        
@@ -179,21 +189,9 @@ app.controller("playerController",
             setTimeout(blink, 4000);
             setTimeout(eyes, 2000);
         });
+     }
     
-        //create function for text input by user
-        $scope.getTextInput = function (){
-            
-            let p = document.createElement("p");//adding paragraph element
-            var textarea = document.getElementById("textBox").value;
-            p.textContent = textarea;
-            if(/\bJohn\b/.test(textarea)) {
-                console.log('correct match!', textarea );
-                $scope.moveToNextItem("John");
-            }
-
-        }
-    }
-    
+     //animate eyes
     function eyes() {
         var ampZ = ((Math.random() * 1) - 0.5) / 20;
         var dur = Math.random() * 50 + 50;
@@ -217,6 +215,7 @@ app.controller("playerController",
         setTimeout(eyes, Math.random() * 1000 + 200);
     }
 
+    //animate blinking
     function blink() {
         var animations =
             {
@@ -253,6 +252,7 @@ app.controller("playerController",
         }
     }
 
+    //animate tweens
     function buildSpeechTweens(visemes) {
         var max = 0.5;
         var tweens = [];
@@ -340,34 +340,14 @@ app.controller("playerController",
         }
     }
 
-//...................start the interaction with avatar............  
-
-    function getNames(str) {
-
-        const name = names.find(function(name){
-            const patt = new RegExp(name, "i");
-            return patt.test(str);
-        });
-        if (name){
-            console.log('I heard the correct phrase!', str );
-            $scope.moveToNextItem(name);   
-        }else{
-            console.log('That didn\'t sound right.');
-            $scope.moveToNextItem("noMatch");
-        }
-
-    
-    }
+//...................start the interaction with avatar............ 
+//functions to determine the key words needed to be identified before moving to next question. 
 
 //.........get reasons...........//
 
     function getReasons(str) {
 
-        document.getElementById("reasonBtns").style.visibility = "hidden";
-        
         const reasons = ['sinuses', 'chest pain', 'gastrointestinal', 'other', 'no'];
-
-
         const reason = reasons.find(function(reason){
             const patt = new RegExp(reason, "i");
             return patt.test(str);
@@ -382,11 +362,9 @@ app.controller("playerController",
         }
     }
 
-    
-
     function getChestReasons(str) { //grey
 
-        const chestReasons = ['cough', 'shortness of breath', 'blood in sputum', 'chest discomfort', 'additional', 'next'];
+        const chestReasons = ['cough', 'shortness of breath', 'blood in sputum', 'chest discomfort', 'additional', 'none'];
 
         const chestReason = chestReasons.find(function(chestReason){
             const patt = new RegExp(chestReason, "i");
@@ -402,9 +380,6 @@ app.controller("playerController",
     }
     
     function getGiReasons(str) { //grey
-
-        document.getElementById("gasReasons").style.visibility = "hidden";
-
         const giReasons = ['constipation', 'diarrhoea', 'abdominal pain', 'vomiting', 'heartburn', 'not'];
 
         const giReason = giReasons.find(function(giReason){
@@ -455,17 +430,20 @@ function getChestYesNoAnswer(str, key) { //green
 
 function getChestPeriodAnswers(str, key) { //red
     console.log('get period answers');
-    var mild = /\bless than a day\b|\b24-hours\b|\bless than 24-hours\b/;
-    var moderate = /\bless than 7 days\b|\bless than 7-days\b|\bless than a week\b|\bcouple of days\b/;
-    var severe = /\bmore than 7 days\b|\bmore than 7-days\b|\bmore than a week\b|\bover a week\b/;
+    var mild = /\bless than a day\b|\b24-hours\b|\bless than 24-hours\b|\ba day ago\b|\ba day\b/;
+    var moderate = /\bless than 7 days\b|\bless than 7-days\b|\bless than a week\b|\bcouple of days\b|\ba few days ago\b|\ba few days\b/;
+    var severe = /\bmore than 7 days\b|\bmore than 7-days\b|\bmore than a week\b|\bover a week\b|\bover a week ago\b/;
 
         if(mild.test(str)) {
+            chest[key] = 'less than a day';
              console.log('I heard the correct phrase!', str );
         }else if(moderate.test(str)) {
+            chest[key] = 'less than 7 days';
             chestScore++;
             console.log("the score is " + chestScore);
             console.log('I heard the correct phrase!', str );
         }else if(severe.test(str)) {
+            chest[key] = 'more than 7 days';
             chestScore+=2;
             console.log("the score is " + chestScore);
             console.log('I heard the correct phrase!', str );
@@ -475,9 +453,14 @@ function getChestPeriodAnswers(str, key) { //red
 
         return true;
 }
+
+    function docChestAnswers(str, key) {
+        console.log('this will document grey answers ', str);
+        chest[key] = str;
+    }
 //......cough questions functions..................
 
-    function getDifColour(str) { //red
+    function getDifColour(str, key) { //red
 
         var mild = /\bclear\b|\bcolourless\b|\bcreamy\b/;
         var moderate = /\bgreen\b|\byellow\b|\bGreen\b|\bpurulent\b/;
@@ -485,12 +468,15 @@ function getChestPeriodAnswers(str, key) { //red
 
             if(mild.test(str)) {
                 console.log('I heard the correct phrase!', str );
+                chest[key] = 'clear';
             }else if(moderate.test(str)) {
                 console.log('I heard the correct phrase!', str );
+                chest[key] = 'yellow/green';
                 chestScore++;
                 console.log("the chestScore is " + chestScore);
             }else if(severe.test(str)) {
                 console.log('I heard the correct phrase!', str );
+                chest[key] = 'brown';
                 chestScore+=2;
                 console.log("the chestScore is " + chestScore);
             }else{
@@ -499,18 +485,21 @@ function getChestPeriodAnswers(str, key) { //red
             }
     }
 
-    function getAmount(str) { //red
+    function getAmount(str, key) { //red
         var mild = /\bnone\b|\blittle\b|\bsmall amount\b|\ba mounth full\b|\bless than a mounth full\b|\bnormal\b/;
         var moderate = /\bmouthfuls\b|\bmore than normal\b/;
-        var severe = /\bloads\b|\blots\b|\balot\b|\ban awful lot\b|\btonnes\b|\bheaps\b|\balot more than normal\b|\bway than normal\b/;
+        var severe = /\bloads\b|\blots\b|\ba lot\b|\balot\b|\ban awful lot\b|\btonnes\b|\bheaps\b|\balot more than normal\b|\bway than normal\b/;
 
             if(mild.test(str)) {
+                chest[key] = 'none/little';
                 console.log('I heard the correct phrase!', str );
             }else if(moderate.test(str)) {
+                chest[key] = 'mouthfuls';
                 console.log('I heard the correct phrase!', str );
                 chestScore++;
                 console.log("the chestScore is " + chestScore);   
             }else if(severe.test(str)) {
+                chest[key] = 'lots';
                 console.log('I heard the correct phrase!', str );
                 chestScore+=2;
                 console.log("the chestScore is " + chestScore);
@@ -521,19 +510,22 @@ function getChestPeriodAnswers(str, key) { //red
             }
     }
   
-    function getBetter(str) { //red
+    function getBetter(str, key) { //red
 
         var mild = /\bbetter\b/;
-        var moderate = /\bworse\b/;
+        var moderate = /\bworse\b|\bworst\b/;
         var severe = /\bsame\b/;
 
             if(mild.test(str)) {
+                chest[key] = 'better';
                 console.log('I heard the correct phrase!', str );
             }else if(moderate.test(str)) {
                 console.log('I heard the correct phrase!', str );
+                chest[key] = 'worse';
                 chestScore++;
                 console.log("the chestScore is " + chestScore);
             }else if(severe.test(str)) {
+                chest[key] = 'same';
                 console.log('I heard the correct phrase!', str );
                 chestScore+=2;
                 console.log("the chestScore is " + chestScore);
@@ -543,15 +535,16 @@ function getChestPeriodAnswers(str, key) { //red
             }
     }
 //..............short of breath questions functions...........  
-function getChestSuddenGradual(str) { //red
+function getChestSuddenGradual(str, key) { //red
 
     var mild = /\bgradual\b|\bgradually\b|\bslowly\b/;
     var moderate = /\bsudden\b|\bsuddenly\b|\bout of the blue\b|\binstantly\b/;
-   // var severe = /\bside\b|\bover\b/;
 
         if(mild.test(str)) {
+            chest[key] = 'gradual';
             console.log('I heard the correct phrase!', str );
         }else if(moderate.test(str)) {
+            chest[key] = 'sudden';
             chestScore++;
             console.log('I heard the correct phrase!', str );
             console.log("the score is " + chestScore);
@@ -561,19 +554,22 @@ function getChestSuddenGradual(str) { //red
         }
 }
 
-    function getMildSevere(str) { //red
+    function getMildSevere(str, key) { //red
 
         var mild = /\bmild\b|\bmildly\b|\ba little\b|\ba small bit\b/;
         var moderate = /\bmoderate\b|\bmoderately\b|\ba bit\b/;
         var severe = /\bseverely\b|\ba lot\b|\bbad\b|\bsevere\b/;
 
             if(mild.test(str)) {
+                chest[key] = 'mild';
                 console.log('I heard the correct phrase!', str );
             }else if(moderate.test(str)) {
                 console.log('I heard the correct phrase!', str );
+                chest[key] = 'moderate';
                 chestScore++;
                 console.log("the chestScore is " + chestScore);
             }else if(severe.test(str)) {
+                chest[key] = 'severe';
                 console.log('I heard the correct phrase!', str );
                 chestScore+=2;
                 console.log("the chestScore is " + chestScore);
@@ -585,7 +581,7 @@ function getChestSuddenGradual(str) { //red
 
     function getRedFlagAnswer(str, key) { //green
         if(conditionsOne.test(str)) {
-            chest[key] = 'yes';
+            chest[key] = 'YES (RED FLAG ATTENTION REQUIRED)';
             chestScore+=100;
             console.log("the score is " + chestScore);
             console.log('I heard the correct phrase!', str );
@@ -598,19 +594,22 @@ function getChestSuddenGradual(str) { //red
         }
     }
 
-    function getHowManyTimes(str) { //red
+    function getHowManyTimes(str, key) { //red
 
         var mild = /\bonce\b|\brarley\b|\bodd time\b/;
         var moderate = /\ba couple of times\b|\ba few times\b|\bmore than once\b/;
         var severe = /\ball the time\b|\bnon stop\b|\bbad\b|\beverytime I cough\b/;
 
             if(mild.test(str)) {
+                chest[key] = 'once';
                 console.log('I heard the correct phrase!', str );
             }else if(moderate.test(str)) {
+                chest[key] = 'a few times';
                 console.log('I heard the correct phrase!', str );
                 chestScore++;
                 console.log("the score is " + chestScore);
             }else if(severe.test(str)) {
+                chest[key] = 'all the time';
                 console.log('I heard the correct phrase!', str );
                 chestScore+=2;
                 console.log("the score is " + chestScore);
@@ -629,16 +628,13 @@ function getChestSuddenGradual(str) { //red
         var severe = /\bmore than 7 days\b|\bmore than 7-days\b|\bmore than a week\b|\bover a week\b/;
 
             if(mild.test(str)) {
-                sinuses[key] = 'mild';
-                gi.constipation_period = 'mild';
+                sinuses[key] = 'less than a day';
             }else if(moderate.test(str)) {
-                sinuses[key] = 'moderate';
-                gi.constipation_period = 'moderate';
+                sinuses[key] = 'less than a week';
                 sinusScore++;
                 console.log("the score is " + sinusScore);
             }else if(severe.test(str)) {
-                sinuses[key] = 'severe';
-                gi.constipation_period = 'severe';
+                sinuses[key] = 'over a week';
                 sinusScore+=2;
                 console.log("the score is " + sinusScore);
             }else{
@@ -665,7 +661,6 @@ function getChestSuddenGradual(str) { //red
         }
 
         function docSinusAnswers(str, key) {
-           // $scope.showYN = false;
             console.log('this will document grey answers ', str);
             sinuses[key] = str;
         }
@@ -673,28 +668,27 @@ function getChestSuddenGradual(str) { //red
 
     function getGiPeriodAnswers(str, key) { //red
         console.log('get period answers');
-        document.getElementById("timeBtns").style.visibility = "hidden";
         var mild = /\bless than a day\b|\b24-hours\b|\bless than 24-hours\b/;
         var moderate = /\bless than 7 days\b|\bless than 7-days\b|\bless than a week\b|\bcouple of days\b/;
         var severe = /\bmore than 7 days\b|\bmore than 7-days\b|\bmore than a week\b|\bover a week\b/;
 
             if(mild.test(str)) {
-                //document.getElementById("YNBtns").style.visibility = "visible";
+                gi[key] = 'less than a day';
             }else if(moderate.test(str)) {
+                gi[key] = 'less than a week';
                 giScore++;
                 console.log("the score is " + giScore);
-                //document.getElementById("YNBtns").style.visibility = "visible";
             }else if(severe.test(str)) {
+                gi[key] = 'more than a week';
                 giScore+=2;
                 console.log("the score is " + giScore);
-               // document.getElementById("YNBtns").style.visibility = "visible";
             }else{
                 throw new Error('noMatch');
             }
 
             return true;
     }
-    function getBowelPeriod(str) { //red
+    function getBowelPeriod(str, key) { //red
 
         var mild = /\bless than a day\b|\b24-hours ago\b|\ba day\b|\ba day ago\b|\bless than 1 day\b/;
         var moderate = /\b1 to 3 days ago\b|\bcouple of days ago\b/;
@@ -702,42 +696,41 @@ function getChestSuddenGradual(str) { //red
 
             if(mild.test(str)) {
                 console.log('I heard the correct phrase!', str );
-                //document.getElementById("YNBtns").style.visibility = "visible";
-                gi.constipation_bowel_motion = 'mild';
+                gi[key] = 'a day ago';
             }else if(moderate.test(str)) {
-                gi.constipation_bowel_motion = 'moderate';
+                gi[key] = 'couple of days ago';
                 console.log('I heard the correct phrase!', str );
                 giScore++;
                 console.log("the giscore is " + giScore);
-                //document.getElementById("YNBtns").style.visibility = "visible";
             }else if(severe.test(str)) {
-                gi.constipation_bowel_motion = 'severe';
+                gi[key]= 'over 3 days';
                 console.log('I heard the correct phrase!', str );
                 giScore+=2;
-                console.log("the giscore is " + giScoree);
-                //document.getElementById("YNBtns").style.visibility = "visible";
+                console.log("the giscore is " + giScore);
             }else{
                 console.log('That didn\'t sound right.');
                 throw new Error('noMatch');
-               // $scope.moveToNextItem("noMatch");
             }
     }
 
 //....dirrahoea
-    function getHowManyBowel(str) { //red
+    function getHowManyBowel(str, key) { //red
 
-        var mild = /\b1 to 3\b|\b123\b/;
-        var moderate = /\b3 to 6\|\b126\bb/;
-        var severe = /\bmore than 6\b|\bover 6\b/;
+        var mild = /\b1 to 3\b|\b123\b|\b1\b|\b2\b|\b3\b/;
+        var moderate = /\b4 to 6\b|\b426\b|\b4\b|\b5\b|\b6\b/;
+        var severe = /\bmore than 6\b|\bover 6\b|\b7\b|\b8\b|\b9\b|\b10\b/;
 
             if(mild.test(str)) {
                 console.log('I heard the correct phrase!', str );
+                gi[key] = '1 to 3';
             }else if(moderate.test(str)) {
                 console.log('I heard the correct phrase!', str );
+                gi[key] = '4 to 6';
                 giScore++;
                 console.log("the giscore is " + giScore);
             }else if(severe.test(str)) {
                 console.log('I heard the correct phrase!', str );
+                gi[key] = 'over 6';
                 giScore+=2;
                 console.log("the giscore is " + giScore);
             }else{
@@ -749,15 +742,17 @@ function getChestSuddenGradual(str) { //red
 //.....abdominal
 
 
-    function getSuddenGradual(str) { //red
+    function getSuddenGradual(str, key) { //red
 
         var mild = /\bgradual\b|\bgradually\b|\bslowly\b/;
         var moderate = /\bsudden\b|\bsuddenly\b|\bout of the blue\b|\binstantly\b/;
        // var severe = /\bside\b|\bover\b/;
 
             if(mild.test(str)) {
+                gi[key] = 'gradual';
                 console.log('I heard the correct phrase!', str );
             }else if(moderate.test(str)) {
+                gi[key] = 'sudden';
                 giScore++;
                 console.log("the giscore is " + giScore);
                 console.log('I heard the correct phrase!', str );
@@ -767,19 +762,22 @@ function getChestSuddenGradual(str) { //red
             }
     }
 
-    function getHowSevere(str) { //red
+    function getHowSevere(str, key) { //red
 
-        var mild = /\b123\b|\blower than 4\b/;
-        var moderate = /\b327\b|\bbetween 3 and 7\b/;
-        var severe = /\b7210\b|\bover 7\b|\bbetween 7 and 10\b/;
+        var mild = /\b123\b|\blower than 4\b|\b1 to 3\b|\b1\b|\b2\b|\b3\b/;
+        var moderate = /\b427\b|\bbetween 4 and 7\b|\b3 to 7\b|\b4\b|\b5\b|\b6\b|\b7\b/;
+        var severe = /\b8210\b|\bover 8\b|\bbetween 8 and 10\b|\b8\b|\b9|\b10\b/;
 
             if(mild.test(str)) {
+                gi[key] = '1 to 3'; 
                 console.log('I heard the correct phrase!', str );
             }else if(moderate.test(str)) {
+                gi[key] = '3 to 7';
                 giScore++;
                 console.log("the giscore is " + giScore);
                 console.log('I heard the correct phrase!', str );
             }else if(severe.test(str)) {
+                gi[key] = 'over 7';
                 giScore+=2;
                 console.log("the giscore is " + giScore);
                 console.log('I heard the correct phrase!', str );
@@ -789,15 +787,17 @@ function getChestSuddenGradual(str) { //red
             }
     }
 
-    function getSharpDull(str) { //red
+    function getSharpDull(str, key) { //red
 
         var mild = /\bdull\b/;
         var moderate = /\bSharp\b|\bsharp\b/;
   
 
             if(mild.test(str)) {
+                gi[key] = 'dull';
                 console.log('I heard the correct phrase!', str );
             }else if(moderate.test(str)) {
+                gi[key] = 'sharp';
                 giScore++;
                 console.log("the giscore is " + giScore);
                 console.log('I heard the correct phrase!', str );
@@ -808,7 +808,6 @@ function getChestSuddenGradual(str) { //red
     }
 
     //.............yes no questions
-
 
     function getGiYesNoAnswer(str, key) { //green
         if(conditionsOne.test(str)) {
@@ -826,11 +825,11 @@ function getChestSuddenGradual(str) { //red
 
     function getGiNoIncrementAnswer(str, key) { //green
         if(conditionsOne.test(str)) {
-            chest[key] = 'yes';
+            gi[key] = 'yes';
             console.log('I heard the correct phrase!', str );
             console.log("the score is " + giScore);
         } else if(conditionsTwo.test(str)){
-            chest[key] = 'no';
+            gi[key] = 'no';
             giScore++;
             console.log('I heard the correct phrase!', str );
             console.log("the giScore is " + giScore);
@@ -841,30 +840,54 @@ function getChestSuddenGradual(str) { //red
     }
 
     //document answer 
-    function docAnswers(str, key) {
+    function docGiAnswers(str, key) {
         console.log('this will document grey answers ', str);
-        // sinuses[key] = str;
+        gi[key] = str;
     }
 
-    function getBaseScore() {
+    function getSinusScore() {
         console.log('the basescore is ', sinusScore);
-        sinuses.basescore_result = sinusScore;
+        sinuses.severity_result = sinusScore;
         sinuses.comparative_score = sinusScore-accounts.sinus_basescore;
+    }
+
+    function getChestScore() {
+        console.log('the basescore is ', chestScore);
+        chest.severity_result = chestScore;
+        chest.comparative_score = chestScore-accounts.chest_basescore;
+    }
+
+    function getGiScore() {
+        console.log('the basescore is ', giScore);
+        gi.severity_result = giScore;
+        gi.comparative_score = giScore-accounts.gi_basescore;
     }
 
 
 //////////////////////////////start talking////////////////////////////
 
+
     $scope.startScript = function () {
         $scope.moveToNextItem("start");
-        recordService.audioChunks = [];
-        recordService.start();
+        // recordService.audioChunks = [];
+        // recordService.start();
         $scope.showStart = false;
+        $scope.hidePlay = true;
+        $scope.showRefresh = true;
         $scope.showReason = true;
-        // document.getElementById("startUp").style.visibility = "hidden";
-        console.log("recorder started");
+        $scope.showReason = true;
+        $scope.showRepeat = true;
+        // console.log("recorder started");
     }    
  
+
+    $scope.endScript = function () {
+        location.replace("xxxx")
+    }
+
+    $scope.reloadPage = function () {
+        location.reload()
+    }
 
 ////////////////get actions when finished talking/////////////////////
 
@@ -872,76 +895,57 @@ function getChestSuddenGradual(str) { //red
     $scope.finishedTalking = function () {
         textContent = " ";
 
-        if (document.getElementById("mic").style.visibility === "hidden"){
-            document.getElementById("mic").style.visibility = "visible";
-        } 
-
-        function listenForNames() {
-            if ($scope.line.id === "start") {
-                speechService.start()
-                    .then(function(result){
-                        getNames(result);
-                    }).catch(function(error) {
-                        console.log(error);
-                    });
-            }    
-        }
-        
         function listenForReasons() {
-            names.forEach(function(name){
-            if ($scope.line.id === name) {
+            if ($scope.line.id === "start")  {
                 speechService.start()
                     .then(function(result){
                         getReasons(result);
-                        //document.getElementById("reasonBtns").style.visibility = "hidden";
+                        $scope.showRepeat = false;
                     })
-                } 
-            });  
+                    .catch(function() {
+                        return $scope.moveToNextItem("noMatch")
+                    })
+                }  
         }
 
-        function listenForEndReasons() {
-            $scope.audio.addEventListener('ended', () => {
-                speechService.start()
-                     .then(function(result){
-                        getReasons(result);
-
-                        //document.getElementById("reasonBtns").style.visibility = "hidden";
-                    })
+        $scope.restartReasons = function () {
+            speechService.start()
+                .then(function(result){
+                    getReasons(result);
+                    $scope.showRepeat = false;
+                })
+                .catch(function() {
+                    return $scope.moveToNextItem("noReasonMatch")
                 })
             }
 
-        
 
 //.................first branch...............//
 
         function MovetoReason() { 
             if ($scope.line.id === "sinuses") {
-                $scope.showTime = true
                 $scope.moveToNextQuestion(sinusQuestions.period)
                 .then(() => listenForAnswers(sinusQuestions.period));
             }else if ($scope.line.id ===  "chest pain"){
-                $scope.chestReason = true
+                $scope.showChest = true;
+                $scope.showChestRepeat = true;
                 $scope.moveToNextQuestion(chestQuestions.chest)
                 .then(() => listenForChestReasons())
             }else if ($scope.line.id ===  "gastrointestinal"){
-                document.getElementById("gasReasons").style.visibility = "visible";
+                $scope.showGi = true;
+                $scope.showGiRepeat = true;
                 $scope.moveToNextQuestion(giQuestions.gi)
                  .then(() => listenForGiReasons())
             }else if ($scope.line.id ===  "other"){
-               //document.getElementById("otherReasons").style.visibility = "visible";
+                // $scope.moveToNextQuestion(obQuestions.spirometer)
+                //     .then(() => listenForSpirometerAnswers(obQuestions.spirometer));
                 $scope.moveToNextQuestion(chestQuestions.fever) 
-                .then(() => listenForAdditionalAnswers(chestQuestions.fever)); 
+                .then(() => listenForAdditionalAnswers(chestQuestions.fever));; 
             }else if ($scope.line.id ===  "no"){
-                // document.getElementById("YNBtns").style.visibility = "visible";
                 $scope.moveToNextQuestion(chestQuestions.fever) 
-                $scope.showOtherReason = false
-                $scope.doc = true
                 .then(() => listenForAdditionalAnswers(chestQuestions.fever)); 
                 }
              }
-        
-
-
             
 //////////////////SINUS RELATED QUESTIONS////////////////////////
         function listenForAnswers(sinusQuestion) {
@@ -951,17 +955,11 @@ function getChestSuddenGradual(str) { //red
                     .then(function(result){
                         switch (sinusKey) {
                             case 'period':
-                                $scope.showTime = false;
-                                $scope.showYN = true;
                                 return getPeriodAnswers(result, sinusKey);
                             case 'cough':
-                                $scope.showYN = false;
-                                $scope.doc = true;
                             case 'add_treatment':
                                 return docSinusAnswers(result, sinusKey);
                             case 'other_symp':
-                                $scope.doc = false;
-                                $scope.showYN = true;
                                return docSinusAnswers(result, sinusKey);
                              default:
                                 return getSinusYesNoAnswer(result, sinusKey);
@@ -976,22 +974,17 @@ function getChestSuddenGradual(str) { //red
 
                         if (nextQuestionIndex ===  sinusQuestionKeys.length - 1) {
                             console.log("Sinus ends")
-                              getBaseScore()
-                              $scope.showYN = false
-                              $scope.showOtherReason = true
-                              $scope.moveToNextQuestion(endQuestions.end_sinus)
+                            getSinusScore();
+                            $scope.moveToNextQuestion(endQuestions.end_sinus)
                             //at the end of questions update the DB
+                            $scope.showRepeat = true;
                             return  patientService.sinuses(patientId, sinuses)
-                            // //convert DB table to CSV
-                            //  textFileService.textFile()
-                            // //Send CSV File via mail
-                            //  return sendFileService.sendMail() 
                                 .then(() => {
                                     return listenForEndReasons()
                                 });
                     
                         }
-                        
+
                         //increment index to move to next question
                         const nextQuestion = sinusQuestions[sinusQuestionKeys[nextQuestionIndex + 1]];
                         return $scope.moveToNextQuestion(nextQuestion)
@@ -1015,376 +1008,421 @@ function getChestSuddenGradual(str) { //red
             $scope.audio.addEventListener('ended', () =>{
                 speechService.start()
                 .then(function(result){
+                    $scope.showCough = true;
+                    $scope.showChestRepeat = false;
                     getChestReasons(result);
+                })
+                .catch(function() {
+                    return $scope.moveToNextItem("noChestMatch")
                 })
             }); 
         }
 
+        $scope.restartChestReasons = function () {
+            speechService.start()
+                .then(function(result){
+                    $scope.showChestRepeat = false;
+                    getChestReasons(result);
+                })
+                .catch(function() {
+                    return $scope.moveToNextItem("noChestMatch")
+                })
+            }
+
         function MovetoChestReason() { 
-            if ($scope.line.id === "cough") {
-                $scope.chestReason = false
-                $scope.showYN = true
-                $scope.moveToNextQuestion(chestQuestions.cough)
-                  .then(() => listenForCoughAnswers(chestQuestions.cough));
+            if ($scope.line.id === "cough"){
+                $scope.showChest = false;
+                $scope.moveToNextQuestion(chestQuestions.ordinarily)
+                  .then(() => listenChangeFlow(chestQuestions.ordinarily));
             }else if ($scope.line.id ===  "shortness of breath"){
-                $scope.moveToNextQuestion(chestQuestions.breath) 
-                $scope.showYN = true
-                .then(() => listenForBreathAnswers(chestQuestions.breath));
+                $scope.showChest = false;
+                $scope.moveToNextQuestion(chestQuestions.breath_different) 
+                .then(() => listenForBreathAnswers(chestQuestions.breath_different));
             }else if ($scope.line.id ===  "blood in sputum"){
-                $scope.showYN = true
-                $scope.moveToNextQuestion(chestQuestions.blood_in_sputum) 
-                .then(() => listenForBloodAnswers(chestQuestions.blood_in_sputum));
+                $scope.showChest = false;
+                $scope.moveToNextQuestion(chestQuestions.red_flag_one) 
+                .then(() => listenForBloodAnswers(chestQuestions.red_flag_one));
             }else if ($scope.line.id ===  "chest discomfort"){
-                $scope.showYN = true
-                $scope.moveToNextQuestion(chestQuestions.chest_discomfort) 
-                .then(() => listenForChestAnswers(chestQuestions.chest_discomfort));
+                $scope.showChest = false;
+                $scope.moveToNextQuestion(chestQuestions.chest_period) 
+                .then(() => listenForChestAnswers(chestQuestions.chest_period));
             }else if ($scope.line.id ===  "additional"){
-                $scope.doc = true
+                $scope.showChest = false;
                 $scope.moveToNextQuestion(chestQuestions.fever) 
                 .then(() => listenForAdditionalAnswers(chestQuestions.fever));
-            }else if ($scope.line.id ===  "next"){
-                $scope.otherchestReason = false
-                $scope.showOtherReason = true
+            }else if ($scope.line.id ===  "none"){
+                $scope.showRepeat = true;
                 $scope.moveToNextQuestion(endQuestions.end_chest)
                 .then(() => listenForEndReasons());
             }
         }
 
+
 //...........cough questions within chest.....................................
        
+        function listenChangeFlow(chestQuestion) {
+            const coughKey = chestQuestion.id;
+                $scope.audio.addEventListener('ended', () => {
+                    speechService.start()
+                    .then(function(result){
+                        switch (coughKey) {
+                            case 'ordinarily':
+                                switch (true) {
+                                    case conditionsOne.test(result):
+                                        console.log('I heard the correct phrase!', result);
+                                        $scope.moveToNextQuestion(chestQuestions.different)
+                                        .then(() => listenForCoughAnswers(chestQuestions.different));
+                                        break;
+                                    case conditionsTwo.test(result):
+                                        console.log('I heard the correct phrase!',result);
+                                        $scope.moveToNextQuestion(chestQuestions.cough_period)
+                                        .then(() => listenForCoughAnswers(chestQuestions.cough_period));
+                                        break;
+                                    default:
+                                        $scope.moveToNextQuestion(chestQuestions.ordinarily)
+                                        .then(() => listenChangeFlow(chestQuestions.ordinarily));
+                                    }
+                                }
+                            });
+                        });
 
-function listenForCoughAnswers(chestQuestion) {
-    const coughKey = chestQuestion.id;
-        $scope.audio.addEventListener('ended', () => {
-            speechService.start()
-            .then(function(result){
-                switch (coughKey) {
-                    case 'different':
-                        $scope.showYN = false;
-                        $scope.showTime = true;
-                        return getChestYesNoAnswer(result, coughKey);
-                    // LOOK TO CHANGE FLOW HERE
-                    case 'cough_period':
-                        $scope.showTime = false;
-                        $scope.showYN = true;
-                        return getChestPeriodAnswers(result, coughKey);;
-                    case 'sputum':
-                        $scope.showYN = false;
-                        $scope.showColour = true;
-                        return getChestYesNoAnswer(result, coughKey);
-                    case 'colour':
-                        $scope.showColour = false;
-                        $scope.doc = true;
-                        return getDifColour(result, coughKey);
-                    case 'difColour':
-                        $scope.doc = false;
-                        $scope.showAmount = true;
-                        return docAnswers(result, coughKey);
-                    case 'much':
-                        $scope.showAmount = false;
-                        $scope.showYN = true;
-                        return getAmount(result, coughKey);
-                    case 'easily':
-                        return getChestNoIncrementAnswer(result, coughKey);
-                    case 'blood':
-                        $scope.showYN = false;
-                        $scope.showBetter = true;
-                        return getChestYesNoAnswer(result, coughKey);
-                    case 'better':
-                        $scope.showBetter = false;
-                        $scope.doc = true;
-                        return getBetter(result, coughKey);
-                    case 'add_treatment':
-                        return docAnswers(result, coughKey);
-                       // getBaseScore(result);
-                    default:
-                        return getChestYesNoAnswer(result, coughKey);
-                    }
-            })
-            .then(() => {
-                const nextQuestionIndex = chestQuestionKeys.findIndex((question) => {
-                    return question === chestQuestion.id
-                });
+                       
+        }
 
-                // If we have asked all sinus questions then break the loop and send info to DB
+        function listenForCoughAnswers(chestQuestion) {
+        
 
-                if (nextQuestionIndex === 12) {
-                    $scope.moveToNextQuestion(endQuestions.end_chest_branches)
-                    $scope.doc = false
-                    $scope.otherchestReason = true
-                    console.log("end Cough branch")
-                    return  patientService.sinuses(1, sinuses)
-                     .then(() => {
-                        return listenForChestReasons()
-                 })
-                }
-                
-                //increment index to move to next question
-                const nextQuestion = chestQuestions[chestQuestionKeys[nextQuestionIndex + 1]];
-                return $scope.moveToNextQuestion(nextQuestion)
+            const coughKey = chestQuestion.id;
+                $scope.audio.addEventListener('ended', () => {
+                    speechService.start()
+                    .then(function(result){
+                        switch (coughKey) {
+                            // LOOK TO CHANGE FLOW HERE
+                            case 'cough_period':
+                                return getChestPeriodAnswers(result, coughKey);;
+                            case 'colour':
+                                return getDifColour(result, coughKey);
+                            case 'difColour':
+                                return docChestAnswers(result, coughKey);
+                            case 'much':
+                                return getAmount(result, coughKey);
+                            case 'easily':
+                                return getChestNoIncrementAnswer(result, coughKey);
+                            case 'blood':
+                                return getChestYesNoAnswer(result, coughKey);
+                            case 'better':
+                                return getBetter(result, coughKey);
+                            case 'add_cough_treatment':
+                                return docChestAnswers(result, coughKey);
+                            case 'other_cough_symp':
+                                return docChestAnswers(result, coughKey);
+                            // getBaseScore(result);
+                            default:
+                                return getChestYesNoAnswer(result, coughKey);
+                            }
+                    })
                     .then(() => {
-                        return listenForCoughAnswers(nextQuestion);
-                    }); // Loops back through this function
-            })
+                        const nextQuestionIndex = chestQuestionKeys.findIndex((question) => {
+                            return question === chestQuestion.id
+                        });
 
-            //if error repeat question
-            .catch(function() {
-                return $scope.moveToNextQuestion(chestQuestion)
-                .then(() => listenForCoughAnswers(chestQuestion)); // Ask question again
-            })
-          });
-}
+                        // If we have asked all sinus questions then break the loop and send info to DB
 
-//...........breath questions within chest.....................................
-
-function listenForBreathAnswers(chestQuestion) {
-    const breathKey = chestQuestion.id;
-        $scope.audio.addEventListener('ended', () => {
-            speechService.start()
-            .then(function(result){
-                switch (breathKey) {
-                    case 'breath':
-                        return getChestYesNoAnswer(result, breathKey);
-                    case 'breath_period':
-                        return getChestPeriodAnswers(result, breathKey);;
-                    case 'sudden':
-                        return getChestSuddenGradual(result, breathKey);
-                    case 'affected':
-                        return getMildSevere(result, breathKey);
-                    //THIS NEEDS TO GET SORTED
-                    case 'add_treatment':
-                        return docAnswers(result, breathKey);
-                    case 'other_symp':
-                       // getBaseScore(result);
-                       return docAnswers(result, breathKey);
-                    default:
-                        return getChestYesNoAnswer(result, breathKey);
-                    }
-            })
-            .then(() => {
-                const nextQuestionIndex = chestQuestionKeys.findIndex((question) => {
-                    return question === chestQuestion.id
-                });
-
-                // If we have asked all sinus questions then break the loop and send info to DB
-
-                if (nextQuestionIndex === 21) {
-                    $scope.moveToNextQuestion(endQuestions.end_chest_branches)
-                    console.log("end breath branch")
-                    return  patientService.sinuses(1, sinuses)
-                    .then(() => {
-                       return listenForChestReasons()
-                })
-                }
-                
-                //increment index to move to next question
-                const nextQuestion = chestQuestions[chestQuestionKeys[nextQuestionIndex + 1]];
-                return $scope.moveToNextQuestion(nextQuestion)
-                    .then(() => {
-                        return listenForBreathAnswers(nextQuestion);
-                    }); // Loops back through this function
-            })
-
-            //if error repeat question
-            .catch(function() {
-                return $scope.moveToNextQuestion(chestQuestion)
-                .then(() => listenForBreathAnswers(chestQuestion)); // Ask question again
-            })
-          });
-}
-
-
-//................blood..........................//
-
-function listenForBloodAnswers(chestQuestion) {
-    const bloodKey = chestQuestion.id;
-        $scope.audio.addEventListener('ended', () => {
-            speechService.start()
-            .then(function(result){
-                switch (bloodKey) {
-                    case 'blood_in_sputum':
-                        return getChestYesNoAnswer(result, bloodKey);
-                    case 'red_flag_one':
-                        //RED FLAG ADD WARNING LARGE NUMBER
-                        return getRedFlagAnswer(result, bloodKey);
-                    case 'amount':
-                        return getAmount(result, bloodKey);
-                    case 'period':
-                        return getHowManyTimes(result, bloodKey);
-                    default:
-                        return getChestYesNoAnswer(result, bloodKey);
-                    }
-            })
-            .then(() => {
-                const nextQuestionIndex = chestQuestionKeys.findIndex((question) => {
-                    return question === chestQuestion.id
-                });
-
-                // If we have asked all sinus questions then break the loop and send info to DB
-
-                if (nextQuestionIndex === 27) {
-                    $scope.moveToNextQuestion(endQuestions.end_chest_branches)
-                    console.log("end blood branch")
-                    return  patientService.sinuses(1, sinuses)
-                    .then(() => {
-                       return listenForChestReasons()
-                })
- 
-                }
-                
-                //increment index to move to next question
-                const nextQuestion = chestQuestions[chestQuestionKeys[nextQuestionIndex + 1]];
-                return $scope.moveToNextQuestion(nextQuestion)
-                    .then(() => {
-                        return listenForBloodAnswers(nextQuestion);
-                    }); // Loops back through this function
-            })
-
-            //if error repeat question
-            .catch(function() {
-                return $scope.moveToNextQuestion(chestQuestion)
-                .then(() => listenForBloodAnswers(chestQuestion)); // Ask question again
-            })
-          });
-}
-
-//............chest pain..............
-
-function listenForChestAnswers(chestQuestion) {
-    const chestKey = chestQuestion.id;
-        $scope.audio.addEventListener('ended', () => {
-            speechService.start()
-            .then(function(result){
-                switch (chestKey) {
-                    case 'chest_discomfort':
-                        return getChestYesNoAnswer(result, chestKey);
-                    case 'chest_period':
-                        return getChestPeriodAnswers(result, chestKey);
-                    case 'start':  
-                        return getChestSuddenGradual(result, chestKey);
-                    case 'red_flag_two':
-                        //RED FLAG ADD WARNING LARGE NUMBER
-                        return getRedFlagAnswer(result, chestKey);
-                    case 'what':
-                        return docAnswers(result, chestKey);
-                    //THIS NEEDS TO GET SORTED
-                    case 'add_treatment':
-                        return docAnswers(result, chestKey);
-                    case 'other_symp':
-                      //  getBaseScore(result);
-                       return docAnswers(result, chestKey);
-                    default:
-                        return getChestYesNoAnswer(result, chestKey);
-                    }
-            })
-            .then(() => {
-                const nextQuestionIndex = chestQuestionKeys.findIndex((question) => {
-                    return question === chestQuestion.id
-                });
-
-                // If we have asked all sinus questions then break the loop and send info to DB
-
-                if (nextQuestionIndex === 38) {
-                    $scope.moveToNextQuestion(endQuestions.end_chest_branches)
-                    console.log("end breath branch")
-                    return  patientService.sinuses(1, sinuses)
-                    .then(() => {
-                       return listenForChestReasons()
-                })
-                }
-                
-                //increment index to move to next question
-                const nextQuestion = chestQuestions[chestQuestionKeys[nextQuestionIndex + 1]];
-                return $scope.moveToNextQuestion(nextQuestion)
-                    .then(() => {
-                        return listenForChestAnswers(nextQuestion);
-                    }); // Loops back through this function
-            })
-
-            //if error repeat question
-            .catch(function() {
-                return $scope.moveToNextQuestion(chestQuestion)
-                .then(() => listenForChestAnswers(chestQuestion)); // Ask question again
-            })
-          });
-}
-
-//.................additional.................
-      //THIS NEEDS TO BE ADD TO THE END OF EVERY SECTION
-        function listenForAdditionalAnswers(chestQuestion) {
-            const addKey = chestQuestion.id;
-            $scope.audio.addEventListener('ended', () => {
-                speechService.start()
-                .then(function(result){
-                    switch (addKey) {
-                        default:
-                            return docAnswers(result, addKey);
+                        if (nextQuestionIndex === 13) {
+                            console.log("end Cough branch")
+                            getChestScore()
+                            $scope.showChestRepeat = true;
+                            $scope.moveToNextQuestion(endQuestions.end_cough_branch)
+                            return  patientService.cough(patientId, chest)
+                            .then(() => {
+                                return listenForChestReasons()
+                        })
                         }
-                })
-
-                .then(() => {
-                    const nextQuestionIndex = chestQuestionKeys.findIndex((question) => {
-                        return question === chestQuestion.id
-                    });
-
-                    if (nextQuestionIndex === 43) {
-                                //document.getElementById("DocAn").style.visibility = "hidden";
-                                console.log("Additional is over")
-                                if (sinusScore == 0 && chestScore == 0 && giScore == 0){
-                                    console.log("mild base score")
-                                    document.getElementById("mild").style.visibility = "visible";
-                                    return $scope.moveToNextItem("mild") 
-                                }else if (sinusScore > 0 && sinusScore <= 7){
-                                    console.log("moderate base score")
-                                    document.getElementById("moderate").style.visibility = "visible";
-                                    return $scope.moveToNextItem("moderate")
-                                }else if (chestScore > 0 && chestScore <= 5){
-                                    console.log("mild base score")
-                                    document.getElementById("mild").style.visibility = "visible";
-                                    return $scope.moveToNextItem("mild") 
-                                }else if (chestScore > 5 && chestScore <= 12){
-                                    console.log("moderate base score")
-                                    document.getElementById("moderate").style.visibility = "visible";
-                                    return $scope.moveToNextItem("moderate")
-                                }else if (chestScore > 12 &&  chestScore <= 20){
-                                    console.log("severe base score")
-                                    document.getElementById("severe").style.visibility = "visible";
-                                    return $scope.moveToNextItem("severe")
-                                }else if (chestScore >= 20){
-                                    document.getElementById("urgent").style.visibility = "visible";
-                                    console.log("urgent base score")
-                                    return $scope.moveToNextItem("urgent")
-                                }else if (giScore > 0 && giScore <= 9){
-                                    console.log("mild base score")
-                                    document.getElementById("mild").style.visibility = "visible";
-                                    return $scope.moveToNextItem("mild") 
-                                }else if (giScore > 9 && giScore <= 15){
-                                    console.log("moderate base score")
-                                    document.getElementById("moderate").style.visibility = "visible";
-                                    return $scope.moveToNextItem("moderate")
-                                }else if (giScore > 15){
-                                    console.log("severe base score")
-                                    document.getElementById("severe").style.visibility = "visible";
-                                    return $scope.moveToNextItem("severe")
-                           }
-                               textFileService.textFile()
-                               return sendFileService.sendMail()
-                
-                       }
+                        
                     
-                    const nextQuestion = chestQuestions[chestQuestionKeys[nextQuestionIndex + 1]];
+                        //increment index to move to next question
+                        const nextQuestion = chestQuestions[chestQuestionKeys[nextQuestionIndex + 1]];
                         return $scope.moveToNextQuestion(nextQuestion)
                             .then(() => {
-                                return listenForAdditionalAnswers(nextQuestion);
-                            }); 
-                        })
+                                return listenForCoughAnswers(nextQuestion);
+                            }); // Loops back through this function
+                    })
 
-                .catch(function() {
-                    return $scope.moveToNextQuestion(chestQuestion)
-                    .then(() => listenForAdditionalAnswers(chestQuestion));  
-                })
-            });
+                    //if error repeat question
+                    .catch(function() {
+                        return $scope.moveToNextQuestion(chestQuestion)
+                        .then(() => listenForCoughAnswers(chestQuestion)); // Ask question again
+                    })
+                });
         }
+
+        //...........breath questions within chest.....................................
+
+        function listenForBreathAnswers(chestQuestion) {
+            const breathKey = chestQuestion.id;
+                $scope.audio.addEventListener('ended', () => {
+                    speechService.start()
+                    .then(function(result){
+                        switch (breathKey) {
+                            case 'breath_period':
+                                return getChestPeriodAnswers(result, breathKey);;
+                            case 'sudden':
+                                return getChestSuddenGradual(result, breathKey);
+                            case 'affected':
+                                return getMildSevere(result, breathKey);
+                            case 'tightness':
+                            case 'breath_add_treatment':
+                                return docChestAnswers(result, breathKey);
+                            case 'breath_other_symp':
+                            return docChestAnswers(result, breathKey);
+                            default:
+                                return getChestYesNoAnswer(result, breathKey);
+                            }
+                    })
+                    .then(() => {
+                        const nextQuestionIndex = chestQuestionKeys.findIndex((question) => {
+                            return question === chestQuestion.id
+                        });
+
+                        // If we have asked all sinus questions then break the loop and send info to DB
+
+                        if (nextQuestionIndex === 22) {
+                            console.log("end breath branch")
+                            getChestScore()
+                            $scope.showChestRepeat = true;
+                            $scope.moveToNextQuestion(endQuestions.end_breath_branch)
+                            return  patientService.breath(patientId, chest)
+                            .then(() => {
+                            return listenForChestReasons()
+                        })
+                        }
+                        
+                        //increment index to move to next question
+                        const nextQuestion = chestQuestions[chestQuestionKeys[nextQuestionIndex + 1]];
+                        return $scope.moveToNextQuestion(nextQuestion)
+                            .then(() => {
+                                return listenForBreathAnswers(nextQuestion);
+                            }); // Loops back through this function
+                    })
+
+                    //if error repeat question
+                    .catch(function() {
+                        return $scope.moveToNextQuestion(chestQuestion)
+                        .then(() => listenForBreathAnswers(chestQuestion)); // Ask question again
+                    })
+                });
+        }
+
+
+        //................blood..........................//
+
+        function listenForBloodAnswers(chestQuestion) {
+            const bloodKey = chestQuestion.id;
+                $scope.audio.addEventListener('ended', () => {
+                    speechService.start()
+                    .then(function(result){
+                        switch (bloodKey) {
+                            case 'red_flag_one':
+                                //RED FLAG ADD WARNING LARGE NUMBER
+                                return getRedFlagAnswer(result, bloodKey);
+                            case 'amount':
+                                return getAmount(result, bloodKey);
+                            case 'period':
+                                return getHowManyTimes(result, bloodKey);
+                            case 'unwell':
+                            case 'blood_other_symp':
+                                return docChestAnswers(result, bloodKey);
+                            default:
+                                return getChestYesNoAnswer(result, bloodKey);
+                            }
+                    })
+                    .then(() => {
+                        const nextQuestionIndex = chestQuestionKeys.findIndex((question) => {
+                            return question === chestQuestion.id
+                        });
+
+                        // If we have asked all sinus questions then break the loop and send info to DB
+
+                        if (nextQuestionIndex === 28) {
+                            console.log("end blood branch")
+                            getChestScore()
+                            $scope.showChestRepeat = true;
+                            $scope.moveToNextQuestion(endQuestions.end_blood_branch)
+                            return  patientService.blood(patientId, chest)
+                            .then(() => {
+                            return listenForChestReasons()
+                        })
+        
+                        }
+                        
+                        //increment index to move to next question
+                        const nextQuestion = chestQuestions[chestQuestionKeys[nextQuestionIndex + 1]];
+                        return $scope.moveToNextQuestion(nextQuestion)
+                            .then(() => {
+                                return listenForBloodAnswers(nextQuestion);
+                            }); // Loops back through this function
+                    })
+
+                    //if error repeat question
+                    .catch(function() {
+                        return $scope.moveToNextQuestion(chestQuestion)
+                        .then(() => listenForBloodAnswers(chestQuestion)); // Ask question again
+                    })
+                });
+        }
+
+        //............chest pain..............
+
+        function listenForChestAnswers(chestQuestion) {
+            const chestKey = chestQuestion.id;
+                $scope.audio.addEventListener('ended', () => {
+                    speechService.start()
+                    .then(function(result){
+                        switch (chestKey) {
+                            case 'chest_period':
+                                return getChestPeriodAnswers(result, chestKey);
+                            case 'start':  
+                                return getChestSuddenGradual(result, chestKey);
+                            case 'red_flag_two':
+                                return getRedFlagAnswer(result, chestKey);
+                            case 'what':
+                                return docChestAnswers(result, chestKey);
+                            default:
+                                return getChestYesNoAnswer(result, chestKey);
+                            }
+                    })
+                    .then(() => {
+                        const nextQuestionIndex = chestQuestionKeys.findIndex((question) => {
+                            return question === chestQuestion.id
+                        });
+
+                        // If we have asked all sinus questions then break the loop and send info to DB
+
+                        if (nextQuestionIndex === 33) {
+                            $scope.moveToNextQuestion(chestQuestions.time) 
+                            console.log("end breath branch")
+                            return  patientService.discomfort(patientId, chest)
+                            .then(() => {
+                                return listenbranchFlow(chestQuestions.time)
+                        })
+                        }
+                        //increment index to move to next question
+                        const nextQuestion = chestQuestions[chestQuestionKeys[nextQuestionIndex + 1]];
+                        return $scope.moveToNextQuestion(nextQuestion)
+                            .then(() => {
+                                return listenForChestAnswers(nextQuestion);
+                            }); // Loops back through this function
+                    })
+
+                    //if error repeat question
+                    .catch(function() {
+                        return $scope.moveToNextQuestion(chestQuestion)
+                        .then(() => listenForChestAnswers(chestQuestion)); // Ask question again
+                    })
+                });
+        }
+
+        function listenbranchFlow(chestQuestion) {
+            const coughKey = chestQuestion.id;
+                $scope.audio.addEventListener('ended', () => {
+                    speechService.start()
+                    .then(function(result){
+                        switch (coughKey) {
+                            case 'time':
+                                switch (true) {
+                                    case conditionsOne.test(result):
+                                        chest.time = "yes";
+                                        console.log('I heard the correct phrase!', result);
+                                        $scope.moveToNextQuestion(chestQuestions.chest_worse)
+                                        .then(() => listenForlastChestAnswers(chestQuestions.chest_worse));
+                                        break;
+                                    case conditionsTwo.test(result):
+                                        chest.time = "No";
+                                        console.log('I heard the correct phrase!',result);
+                                        $scope.moveToNextQuestion(branchQuestions.sometimes)
+                                        .then(() => listenChestChangeFlow(branchQuestions.sometimes));
+                                        break;
+                                    default:
+                                        $scope.moveToNextQuestion(chestQuestions.time) 
+                                        .then(() => listenbranchFlow(chestQuestions.time));
+                                    }
+                                }
+                            });
+                        });
+        }
+
+        function listenChestChangeFlow(branchQuestion) {
+            const branchKey = branchQuestion.id;
+                $scope.audio.addEventListener('ended', () => {
+                    speechService.start()
+                    .then(function(result){
+                        switch (branchKey) {
+                            case 'sometimes':
+                                docChestAnswers(result, branchKey);
+                                $scope.moveToNextQuestion(branchQuestions.often)
+                                .then(() => listenChestChangeFlow(branchQuestions.often));
+                                break;
+                            case 'often':
+                                docChestAnswers(result, branchKey);
+                                $scope.moveToNextQuestion(chestQuestions.chest_worse)
+                                .then(() => listenForlastChestAnswers(chestQuestions.chest_worse));
+                                break;
+                            default:
+                                return docChestAnswers(result, branchKey);
+                                }
+                            });
+                        });
+        }
+
+        function listenForlastChestAnswers(chestQuestion) {
+            const chestKey = chestQuestion.id;
+                $scope.audio.addEventListener('ended', () => {
+                    speechService.start()
+                    .then(function(result){
+                        switch (chestKey) {
+                            case 'chest_worse':
+                                return getChestYesNoAnswer(result, chestKey);
+                            case 'shortness_of_breath':
+                            case 'chest_other_symp':
+                            return docChestAnswers(result, chestKey);
+                            default:
+                                return getChestYesNoAnswer(result, chestKey);
+                            }
+                    })
+                    .then(() => {
+                        const nextQuestionIndex = chestQuestionKeys.findIndex((question) => {
+                            return question === chestQuestion.id
+                        });
+
+                        // If we have asked all sinus questions then break the loop and send info to DB
+
+                        if (nextQuestionIndex === 39) {
+                            console.log("end breath branch")
+                            getChestScore()
+                            $scope.showChestRepeat = true;
+                            $scope.moveToNextQuestion(endQuestions.end_discomfort_branch)
+                            return  patientService.discomfort(patientId, chest)
+                            .then(() => {
+                            return listenForChestReasons()
+                        })
+                        }
+                        //increment index to move to next question
+                        const nextQuestion = chestQuestions[chestQuestionKeys[nextQuestionIndex + 1]];
+                        return $scope.moveToNextQuestion(nextQuestion)
+                            .then(() => {
+                                return listenForlastChestAnswers(nextQuestion);
+                            }); // Loops back through this function
+                    })
+
+                    //if error repeat question
+                    .catch(function() {
+                        return $scope.moveToNextQuestion(chestQuestion)
+                        .then(() => listenForlastChestAnswers(chestQuestion)); // Ask question again
+                    })
+                });
+        }
+
+
 
 ////////////////////MOVE TO GI QUESTIONS////////////////////////////
 
@@ -1393,28 +1431,49 @@ function listenForChestAnswers(chestQuestion) {
                 speechService.start()
                 .then(function(result){
                     getGiReasons(result);
+                    $scope.showGiRepeat = false;
+                })
+                .catch(function() {
+                    return $scope.moveToNextItem("noGiMatch")
                 })
             }); 
         }
+
+        $scope.restartGiReasons = function () {
+            speechService.start()
+                .then(function(result){
+                    getGiReasons(result);
+                    $scope.showGiRepeat = false;
+                })
+                .catch(function() {
+                    return $scope.moveToNextItem("noGiMatch")
+                })
+            }
         //.................first gi branch...............//
 
         function MovetoGiReason() { 
             if ($scope.line.id === "constipation") {
-                $scope.moveToNextQuestion(giQuestions.constipation)
-                .then(() => listenForConstipationAnswers(giQuestions.constipation));
+                $scope.showGi = false;
+                $scope.moveToNextQuestion(giQuestions.constipation_period)
+                .then(() => listenForConstipationAnswers(giQuestions.constipation_period));
             }else if ($scope.line.id ===  "diarrhoea"){
-                $scope.moveToNextQuestion(giQuestions.diarrhoea) 
-                .then(() => listenForDiarrhoeaAnswers(giQuestions.diarrhoea));
+                $scope.showGi = false;
+                $scope.moveToNextQuestion(giQuestions.diarrhoea_period) 
+                .then(() => listenForDiarrhoeaAnswers(giQuestions.diarrhoea_period));
             }else if ($scope.line.id ===  "abdominal pain"){
-                $scope.moveToNextQuestion(giQuestions.abdominal_pain)
-                .then(() => listenForAbdominalAnswers(giQuestions.abdominal_pain)); 
+                $scope.showGi = false;
+                $scope.moveToNextQuestion(giQuestions.where)
+                .then(() => listenForAbdominalAnswers(giQuestions.where)); 
             }else if ($scope.line.id ===  "vomiting"){
-                $scope.moveToNextQuestion(giQuestions.vomit)
-                .then(() => listenForVomitAnswers(giQuestions.vomit));
+                $scope.showGi = false;
+                $scope.moveToNextQuestion(giQuestions.when)
+                .then(() => listenForVomitAnswers(giQuestions.when));
             }else if ($scope.line.id ===  "heartburn"){
-                $scope.moveToNextQuestion(giQuestions.heartburn) 
-                .then(() => listenForHeartburnAnswers(giQuestions.heartburn));
+                $scope.showGi = false;
+                $scope.moveToNextQuestion(giQuestions.heartburn_period) 
+                .then(() => listenForHeartburnAnswers(giQuestions.heartburn_period));
             }else if ($scope.line.id ===  "not"){
+                $scope.showRepeat = true;
                 $scope.moveToNextQuestion(endQuestions.end_gas)
                 .then(() => listenForEndReasons());
         }
@@ -1427,17 +1486,14 @@ function listenForChestAnswers(chestQuestion) {
                     speechService.start()
                     .then(function(result){
                         switch (ConstipationKey) {
-                            case 'constipation':
-                                return getGiYesNoAnswer(result, ConstipationKey);
                             case 'constipation_period':
                                 return getGiPeriodAnswers(result, ConstipationKey);
                             case 'constipation_bowel_motion':  
                                 return getBowelPeriod(result, ConstipationKey);
                             case 'previous': 
-                                return docAnswers(result, ConstipationKey);
+                                return docGiAnswers(result, ConstipationKey);
                             case 'constipation_eating': 
                                 return  getGiNoIncrementAnswer(result, ConstipationKey);
-                                //getBaseScore(result);
                             default:
                                 return getGiYesNoAnswer(result, ConstipationKey);
                             }
@@ -1450,9 +1506,11 @@ function listenForChestAnswers(chestQuestion) {
                         // If we have asked all sinus questions then break the loop and send info to DB
         
                         if (nextQuestionIndex === 8) {
-                            $scope.moveToNextQuestion(endQuestions.end_gas_branches)
                             console.log("end breath branch")
-                            return  patientService.sinuses(1, sinuses)
+                            getGiScore();
+                            $scope.moveToNextQuestion(endQuestions.end_con_branch)  
+                            $scope.showGiRepeat = true;                
+                            return  patientService.constipation(patientId, gi)
                             .then(() => {
                                return listenForGiReasons()
                         })
@@ -1483,18 +1541,10 @@ function listenForChestAnswers(chestQuestion) {
                     speechService.start()
                     .then(function(result){
                         switch (diarrhoeaKey) {
-                            case 'diarrhoea':
-                                return getGiYesNoAnswer(result, diarrhoeaKey);
                             case 'diarrhoea_period':
                                 return getGiPeriodAnswers(result, diarrhoeaKey);
-                            case 'diarrheoa_bowel_motion':  
+                            case 'diarrhoea_bowel_motion':  
                                 return getHowManyBowel(result, diarrhoeaKey);
-                            //THIS NEEDS TO GET SORTED
-                            case 'add_treatment':
-                                return docAnswers(result, diarrhoeaKey);
-                            case 'other_symp':
-                               // getBaseScore(result);
-                               return docAnswers(result, diarrhoeaKey);
                             default:
                                 return getGiYesNoAnswer(result, diarrhoeaKey);
                             }
@@ -1507,9 +1557,11 @@ function listenForChestAnswers(chestQuestion) {
                         // If we have asked all sinus questions then break the loop and send info to DB
         
                         if (nextQuestionIndex === 16) {
-                            $scope.moveToNextQuestion(endQuestions.end_gas_branches)
                             console.log("end breath branch")
-                            return  patientService.sinuses(1, sinuses)
+                            getGiScore()
+                            $scope.moveToNextQuestion(endQuestions.end_dia_branch)
+                            $scope.showGiRepeat = true;
+                            return  patientService.diarrhoea(patientId, gi)
                             .then(() => {
                                return listenForGiReasons()
                         })
@@ -1540,10 +1592,8 @@ function listenForChestAnswers(chestQuestion) {
                     speechService.start()
                     .then(function(result){
                         switch (abKey) {
-                            case 'abdominal_pain':
-                                return getGiYesNoAnswer(result, abKey);
                             case 'where':
-                                return docAnswers(result, abKey);
+                                return docGiAnswers(result, abKey);
                             case 'abdominal_pain_period':  
                                 return getGiPeriodAnswers(result, abKey);
                             case 'abdominal_pain_sudden':
@@ -1570,9 +1620,11 @@ function listenForChestAnswers(chestQuestion) {
                         // If we have asked all sinus questions then break the loop and send info to DB
         
                         if (nextQuestionIndex === 29) {
-                            $scope.moveToNextQuestion(endQuestions.end_gas_branches)
                             console.log("end breath branch")
-                            return  patientService.sinuses(1, sinuses)
+                            getGiScore();
+                            $scope.moveToNextQuestion(endQuestions.end_ab_branch)
+                            $scope.showGiRepeat = true;
+                            return  patientService.abdominal(patientId, gi)
                             .then(() => {
                                return listenForGiReasons()
                         })
@@ -1594,62 +1646,6 @@ function listenForChestAnswers(chestQuestion) {
                   });
         }
 
-        // function listenForAbdominalAnswers(giQuestion) {
-
-        //         $scope.audio.addEventListener('ended', () => {
-        //             speechService.start()
-        //             .then(function(result){
-        //                 switch (giQuestionKeys[abIndex]) {
-        //                     case 'where':
-        //                         return getGiYesNoAnswer(result);
-        //                     case 'abdominal_pain_period':
-        //                         return getWherePain(result);
-        //                     case 'abdominal_pain_sudden':
-        //                         return getPeriodAnswers(result);
-        //                     case 'all_time':
-        //                         return getSuddenGradual(result);
-        //                     case 'deteriorate':
-        //                         return getGiYesNoAnswer(result);
-        //                     case 'severe':
-        //                         return getGiYesNoAnswer(result);
-        //                     case 'sharp':
-        //                         return getHowSevere(result);
-        //                     case 'bowel_motion':
-        //                         return getSharpDull(result);
-        //                     default:
-        //                         return getGiYesNoAnswer(result, giQuestionKeys[abIndex]);
-        //                     }
-        //             })
-        //             .then(() => {
-        //                 return $scope.moveToNextQuestion(giQuestion)
-        //                 .then(() => {
-        //                     abIndex++;
-        //                     switch (giQuestionKeys[abIndex - 1]) {
-        //                          case "vomit":
-        //                              break;
-                              
-        //                         default:
-        //                             return listenForAbdominalAnswers(giQuestions[giQuestionKeys[abIndex]]);
-        //                     }
-        //                 }); // Loops back through this function
-        //             })
-        //             .catch(function(error) {
-        //                 console.log(error);
-        //                 return $scope.moveToNextQuestion(giQuestions[giQuestionKeys[abIndex - 1]])
-        //                 .then(() => {
-        //                     switch (giQuestionKeys[abIndex - 1]) {
-        //                         // case "other_symp":
-        //                         //     return listenForReasons();
-        //                         default:
-        //                             console.log(giQuestionKeys[abIndex]);
-        //                             return listenForAbdominalAnswers(giQuestions[giQuestionKeys[abIndex]]);
-                                    
-        //                     }
-        //                 }); // Loops back through this function
-        //             })
-        //         });
-        // }
-
         //..............VOMIT QUESTIONS...................//
 
         function listenForVomitAnswers(giQuestion) {
@@ -1658,10 +1654,10 @@ function listenForChestAnswers(chestQuestion) {
                     speechService.start()
                     .then(function(result){
                         switch (vomitKey) {
-                            case 'vomit':
-                                return docAnswers(result, vomitKey);
+                            case 'when':
+                                return docGiAnswers(result, vomitKey);
                             default:
-                                return docAnswers(result, vomitKey);
+                                return docGiAnswers(result, vomitKey);
                             }
                     })
                     .then(() => {
@@ -1672,9 +1668,11 @@ function listenForChestAnswers(chestQuestion) {
                         // If we have asked all sinus questions then break the loop and send info to DB
         
                         if (nextQuestionIndex === 37) {
-                            $scope.moveToNextQuestion(endQuestions.end_gas_branches)
                             console.log("end breath branch")
-                            return  patientService.sinuses(1, sinuses)
+                            getGiScore();
+                            $scope.moveToNextQuestion(endQuestions.end_vom_branch)
+                            $scope.showGiRepeat = true;
+                            return  patientService.vomit(patientId, gi)
                             .then(() => {
                                return listenForGiReasons()
                         })
@@ -1705,12 +1703,13 @@ function listenForChestAnswers(chestQuestion) {
                     speechService.start()
                     .then(function(result){
                         switch (heartburnKey) {
-                            case 'heartburn':
-                                return docAnswers(result, heartburnKey);
+                            case 'heartburn_period':
+                                return docGiAnswers(result, heartburnKey);
                             default:
-                                return docAnswers(result, heartburnKey);
+                                return docGiAnswers(result, heartburnKey);
                             }
                     })
+
                     .then(() => {
                         const nextQuestionIndex = giQuestionKeys.findIndex((question) => {
                             return question === giQuestion.id
@@ -1719,9 +1718,11 @@ function listenForChestAnswers(chestQuestion) {
                         // If we have asked all sinus questions then break the loop and send info to DB
         
                         if (nextQuestionIndex === giQuestionKeys.length - 1) {
-                            $scope.moveToNextQuestion(endQuestions.end_gas_branches)
                             console.log("end breath branch")
-                            return  patientService.sinuses(1, sinuses)
+                            getGiScore();
+                            $scope.moveToNextQuestion(endQuestions.end_heart_branch)
+                            $scope.showGiRepeat = true;
+                            return  patientService.heartburn(patientId, gi)
                             .then(() => {
                                return listenForGiReasons()
                         })
@@ -1743,47 +1744,468 @@ function listenForChestAnswers(chestQuestion) {
                   });
         }
 
-        // //let heartburnIndex = 39;
+        //.................additional.................
+      //THIS NEEDS TO BE ADD TO THE END OF EVERY SECTION
+      function listenForAdditionalAnswers(chestQuestion) {
+        const addKey = chestQuestion.id;
+        $scope.audio.addEventListener('ended', () => {
+            speechService.start()
+            .then(function(result){
+                switch (addKey) {
+                    default:
+                        return docChestAnswers(result, addKey);
+                    }
+            })
 
-        // function listenForHeartburnAnswers(giQuestion) {
+            .then(() => {
+                const nextQuestionIndex = chestQuestionKeys.findIndex((question) => {
+                    return question === chestQuestion.id
+                });
 
-        //         $scope.audio.addEventListener('ended', () => {
-        //             speechService.start()
-        //             .then(function(result){
-        //                 switch (giQuestionKeys[heartburnIndex]) {
-        //                     default:
-        //                         return docAnswers(result, giQuestionKeys[heartburnIndex]);
-        //                     }
-        //             })
-        //             .then(() => {
-        //                 return $scope.moveToNextQuestion(giQuestion)
-        //                 .then(() => {
-        //                     heartburnIndex++;
-        //                     switch (giQuestionKeys[heartburnIndex  - 1]) {
-        //                          case "heartburn_times":
-        //                              break;
-        //                         default:
-        //                             return listenForHeartburnAnswers(giQuestions[giQuestionKeys[heartburnIndex]]);
-        //                     }
-        //                 }); // Loops back through this function
-        //             })
-        //             .catch(function(error) {
-        //                 console.log(error);
-        //                 return $scope.moveToNextQuestion(giQuestions[giQuestionKeys[vomitIndex  - 1]])
-        //                 .then(() => {
-        //                     switch (giQuestionKeys[heartburnIndex  - 1]) {
-        //                         // case "other_symp":
-        //                         //     return listenForReasons();
-        //                         default:
-        //                             console.log(giQuestionKeys[heartburnIndex ]);
-        //                             return listenForHeartburnAnswers(giQuestions[giQuestionKeys[heartburnIndex]]);
-                                    
-        //                     }
-        //                 }); // Loops back through this function
-        //             })
-        //         });
-        // }
+                if (nextQuestionIndex === 44) {
+                    getChestScore()
+                    myobj.remove()
+                    $scope.moveToNextQuestion(obQuestions.spirometer)
+                    .then(() => listenForSpirometerAnswers(obQuestions.spirometer));
+                    return patientService.additional(patientId, chest)
+                   }
 
+                const nextQuestion = chestQuestions[chestQuestionKeys[nextQuestionIndex + 1]];
+                    return $scope.moveToNextQuestion(nextQuestion)
+                        .then(() => {
+                            return listenForAdditionalAnswers(nextQuestion);
+                        }); 
+                    })
+
+            .catch(function() {
+                return $scope.moveToNextQuestion(chestQuestion)
+                .then(() => listenForAdditionalAnswers(chestQuestion));  
+            })
+        });
+    }
+
+    function listenForEndReasons() {
+        $scope.audio.addEventListener('ended', () => {
+            speechService.start()
+                 .then(function(result){
+                    $scope.showRepeat = false;
+                    getReasons(result);
+                })
+                .catch(function() {
+                    return $scope.moveToNextItem("noReasonMatch")
+                })
+            })
+        }
+
+        //...............OBJECTIVE QUESTIONS............//
+
+        //THIS NEEDS TO BE ADD TO THE END OF EVERY SECTION
+        function listenForSpirometerAnswers(obQuestion, visemes) {
+            document.getElementById("textBox").value = "";
+            let yesBtn = document.getElementById("yesBtn");
+            $scope.showSNoBtn = true;
+            $scope.showYesBtn = true;
+
+            $scope.startSpiroScript = function () {
+                yesBtn.remove()
+                $scope.showNextBtn = true;
+                ob.spirometer_yes = "yes";
+                $scope.audio.pause();
+                
+                return $scope.moveToNextQuestion(obQuestions.spirometer_location)
+                .then(() => {
+                    return listenForSpirometerAnswers(obQuestions.spirometer_location);
+                });  
+            }
+
+            $scope.startAllSpiroScript = function () {
+                $scope.showYesBtn = false;
+                $scope.audio.pause();
+               
+                const nextQuestionIndex = obQuestionKeys.findIndex((question) => {
+                    return question === obQuestion.id
+                });
+
+                if (nextQuestionIndex === 7) {
+                    console.log("this is number 7")
+                    $scope.showNotFin = true;
+                    document.getElementById("sNoBtn").style.visibility = "hidden";
+                }else if (nextQuestionIndex === 8){
+                    $scope.showNotFin = false;
+                }else if (nextQuestionIndex === 9){
+                    $scope.showTextInput = true;
+                }else if (nextQuestionIndex === 10){
+                    $scope.showTextInput = false;
+                    $scope.showSpirometerInput = false;
+                    $scope.showNextBtn = false;
+                    $scope.showCompleteBtn = true;
+                    $scope.showNextBlowBtn = true;
+                    arrayInputs()
+                }
+
+                const nextQuestion = obQuestions[obQuestionKeys[nextQuestionIndex + 1]];
+                return $scope.moveToNextQuestion(nextQuestion)
+                .then(() => {
+                    return listenForSpirometerAnswers(nextQuestion);
+                });  
+            }
+
+            $scope.notCompleteSpiro = function () {
+                $scope.audio.pause();
+                return $scope.moveToNextQuestion(obQuestions.nose_clip)
+                .then(() => {
+                    return listenForSpirometerAnswers(obQuestions.nose_clip);
+                });  
+            }
+
+            $scope.nextBlow = function () {
+                $scope.audio.pause();
+                $scope.showCompleteBtn = false;
+                $scope.showNextBlowBtn = false;
+                $scope.showNextBtn = true;
+                return $scope.moveToNextQuestion(obQuestions.spirometer_prepare)
+                .then(() => {
+                    return listenForSpirometerAnswers(obQuestions.spirometer_prepare);
+                });  
+            }
+
+            $scope.completeSpiro = function () {
+                $scope.audio.pause();
+                $scope.showCompleteBtn = false;
+                $scope.showNextBlowBtn = false;
+                getHighestInput()
+                return $scope.moveToNextQuestion(obQuestions.oxygen)
+                .then(() => {
+                    return listenForOxygenAnswers(obQuestions.oxygen)
+                });  
+            }
+            
+            $scope.startSpiroNoScript = function () {
+                $scope.audio.pause();
+                ob.spirometer_no = "no";
+                return $scope.moveToNextQuestion(obQuestions.spirometer_no)
+                .then(() => {
+                    $scope.showTextInput = true;
+                    $scope.showSpirometerInput = true;
+                    $scope.showSNoBtn = false;
+                    $scope.showNextBtn = false;
+                    yesBtn.remove()
+                });
+                }
+
+            $scope.getSpirometerInput = function (){ 
+                $scope.audio.pause();
+                var other = document.getElementById("textBox").value;
+                $scope.showTextInput = false;
+                $scope.showSpirometerInput = false;
+                console.log(other);
+                ob.spirometer_input = other;
+                return $scope.moveToNextQuestion(obQuestions.oxygen)
+                .then(() => {
+                    return listenForOxygenAnswers(obQuestions.oxygen)
+                })
+            }
+        }  
+
+////////OXYGEN MEASURMENTS//////////
+
+        function listenForOxygenAnswers(obQuestion){
+            $scope.showONoBtn = true;
+            $scope.showOxygenBtn = true; 
+            $scope.showNextBtn = false;
+            document.getElementById("textBox").value = ""; 
+            var oxInput  = document.getElementById("textBox").value;
+
+            $scope.startOxygenScript = function () {
+                $scope.audio.pause();
+                ob.oxygen_yes = "yes";
+                document.getElementById("yesOBtn").style.visibility = "hidden";
+                $scope.showOxygenNextBtn = true;
+                return $scope.moveToNextQuestion(obQuestions.oxygen_location)
+                .then(() => {
+                    return listenForOxygenAnswers(obQuestions.oxygen_location);
+                });
+                }
+
+                $scope.startAllOxygenScript = function () { 
+                    $scope.audio.pause();   
+                    const nextQuestionIndex = obQuestionKeys.findIndex((question) => {
+                        return question === obQuestion.id
+                    });
+    
+                    if (nextQuestionIndex === 17){
+                        $scope.showTextInput = true;
+                    }else if (nextQuestionIndex === 18){
+                        $scope.showTextInput = false;
+                        $scope.showOxygenNextBtn = false;
+                        $scope.showCompleteOx = true;
+                        $scope.showRepeatBtn = true;
+                        document.getElementById("oNoBtn").style.visibility = "hidden"
+                    }
+    
+                    const nextQuestion = obQuestions[obQuestionKeys[nextQuestionIndex + 1]];
+                    return $scope.moveToNextQuestion(nextQuestion)
+                    .then(() => {
+                        return listenForOxygenAnswers(nextQuestion);
+                    });  
+                }
+                
+                $scope.repeatAssessment = function () {
+                    $scope.audio.pause();
+                    $scope.showCompleteOx = false;
+                    $scope.showRepeatBtn = false;
+                    $scope.showOxygenNextBtn = true;
+                    return $scope.moveToNextQuestion(obQuestions.oxygen_equipment)
+                    .then(() => {
+                        return listenForOxygenAnswers(obQuestions.oxygen_equipment);
+                    });  
+                }
+
+                $scope.completeOx = function () {
+                    $scope.audio.pause();
+                    $scope.showCompleteOx = false;
+                    $scope.showRepeatBtn = false;
+                    ob.oxygen_input = oxInput;
+                    console.log(oxInput);
+                    return $scope.moveToNextQuestion(obQuestions.temperature)
+                    .then(() => {
+                        return listenForTempAnswers(obQuestions.temperature)
+                    });  
+                }
+
+            $scope.startOxygenNoScript = function () {
+                $scope.audio.pause();
+                ob.oxygen_no = "no";
+                return $scope.moveToNextQuestion(obQuestions.oxygen_no)
+                .then(() => {
+                    $scope.showTextInput = true;
+                    $scope.showOxygenInput = true;
+                    $scope.showOxygenNextBtn = false;
+                    $scope.showONoBtn = false;
+                    $scope.showOxygenBtn = false;
+                });
+            }
+
+            $scope.getOxygenInput = function (){
+                $scope.audio.pause();
+                var otherReason  = document.getElementById("textBox").value;
+                $scope.showTextInput = false;
+                $scope.showOxygenInput = false;
+                ob.oxygen_input = otherReason;
+                console.log( otherReason );
+                return $scope.moveToNextQuestion(obQuestions.temperature)
+                .then(() => {
+                return listenForTempAnswers(obQuestions.temperature)
+                })
+            }
+        }
+
+/////////TEMPERATURE MEASURMENTS//////////////////////
+            
+        function listenForTempAnswers(obQuestion){
+            $scope.showTNoBtn = true;
+            $scope.showTempBtn = true;
+            document.getElementById("textBox").value = ""; 
+            var temp = document.getElementById("textBox").value;
+            const nextQuestionIndex = obQuestionKeys.findIndex((question) => {
+                return question === obQuestion.id
+            });
+
+            $scope.startTempScript = function () {
+                $scope.audio.pause();
+                ob.temperature_yes = "yes";
+                if (nextQuestionIndex === 25){
+                    $scope.showTextInput = true;
+                }else if (nextQuestionIndex === 26){
+                    $scope.showTextInput = false;
+                    $scope.showCompleteT = true;
+                    $scope.showRepeatTBtn = true;
+                    document.getElementById("tNoBtn").style.visibility = "hidden"
+                    document.getElementById("tBtn").style.visibility = "hidden"
+                }
+                const nextQuestion = obQuestions[obQuestionKeys[nextQuestionIndex + 1]];
+                return $scope.moveToNextQuestion(nextQuestion)
+                .then(() => {
+                    return listenForTempAnswers(nextQuestion);
+                });
+                }
+
+            $scope.repeatTAssessment = function () {
+                $scope.audio.pause();
+                $scope.showCompleteT = false;
+                $scope.showRepeatTBtn = false;
+                document.getElementById("tBtn").style.visibility = "visible"
+                return $scope.moveToNextQuestion(obQuestions.temperature_prepare)
+                .then(() => {
+                    return listenForTempAnswers(obQuestions.temperature_prepare);
+                });  
+            }
+
+            $scope.completeT = function () {
+                $scope.audio.pause();
+                $scope.showCompleteT = false;
+                $scope.showRepeatTBtn = false;
+                ob.temperature_input = temp;
+                console.log( temp );
+                if (temp >= 38){
+                    obScore++;
+                    ob.objective_score = obScore;
+                    console.log(obScore);
+                }
+                return getFinalSentance();
+            }
+
+
+            $scope.startTempNoScript = function () {
+                $scope.audio.pause();
+                ob.temperature_no = "no";
+                return $scope.moveToNextQuestion(obQuestions.temperature_no)
+                .then(() => {
+                    $scope.showTNoBtn = false;
+                    $scope.showTempBtn = false;
+                    $scope.showTextInput = true;
+                    $scope.showTemperatureInput = true;
+                });
+                }
+
+            $scope.getTemperatureInput = function (){
+                $scope.audio.pause();
+                var othertempReason  = document.getElementById("textBox").value;
+                $scope.showTextInput = false;
+                $scope.showOxygenInput = false;
+                $scope.endVisit = true;
+                $scope.bye = true;
+                ob.objective_score = obScore;
+                ob.temperature_input = othertempReason;
+                return getFinalSentance();
+            }  
+        }
+
+        ////functions for Calculating lung function////////////
+
+        function arrayInputs(){
+        let readings = document.getElementById("textBox").value;
+        lfReadings.push(readings);
+        console.log(lfReadings);
+        }
+
+        function getHighestInput(){
+            const largest = Math.max.apply(Math, lfReadings);
+            console.log("The largest number is " + largest);
+            ob.spirometer_input = largest;
+            getCalculation(largest)
+        }
+
+        function getCalculation(ltrs){
+            var gender = accounts.gender;
+            var age = accounts.age;
+            var mtrs = accounts.height;
+
+            if(gender == "m"){
+                var result = (4.3*mtrs) - (0.029*age) - 2.49;
+                predicted = (ltrs/result)*100;
+                getLFScores(predicted);
+                ob.spirometer_percentage = predicted;
+                console.log(predicted);
+            }else if(gender == "f"){
+                var result = (3.95*mtrs) - (0.025*age) - 2.6;
+                predicted = (ltrs/result)*100;
+                getLFScores(predicted);
+                ob.spirometer_percentage = predicted;
+                console.log(predicted);
+            }else{
+                console.log("THIS DIDNT WORK");
+                }
+        }
+
+        function getLFScores(predicted){
+            var blf = accounts.blf;
+            var diff = predicted - blf;
+            console.log(diff);
+            if(predicted > blf || diff >= -5 &&  diff <= 0){
+                obScore++;
+                console.log(obScore);
+            }else if(diff >= -10 && diff < -5){
+                obScore+=2;
+                console.log(obScore);
+            }else if(diff < -10){ 
+                obScore+=3;
+                console.log(obScore);
+            }
+        }
+
+        function getFinalSentance(){
+            patientService.objective(patientId, ob)
+            // sendFileService.sendMail() 
+            $scope.doctor = true;
+            console.log(sinusScore, chestScore, giScore, obScore)
+
+            switch (true){
+        
+                case obScore <= 1:
+                    switch(true){
+                        case sinusScore == 0 && chestScore == 0 && giScore == 0 && obScore == 0:
+                        case chestScore > 0 && chestScore <= 5:
+                        case giScore > 0 && giScore <= 9:
+                            console.log("mild base score")
+                            return $scope.moveToNextQuestion(endQuestions.end_mild)
+                        case sinusScore > 0 && sinusScore <= 7:
+                        case chestScore > 5 && chestScore <= 12:
+                        case giScore > 9 && giScore <= 15:
+                            console.log("moderate base score")
+                            return $scope.moveToNextQuestion(endQuestions.end_moderate)
+                        case chestScore > 12 && chestScore <= 20:
+                        case giScore > 15:
+                            console.log("severe base score")
+                            return $scope.moveToNextQuestion(endQuestions.end_severe)
+                        case chestScore >= 20:
+                            console.log("urgent base score")
+                            return $scope.moveToNextQuestion(endQuestions.end_urgent)
+                        default:
+                            return $scope.moveToNextQuestion(endQuestions.end_mild)
+                    }
+                 
+                
+                case obScore == 2:
+                    switch(true){
+                        case sinusScore > 0 && sinusScore <= 7:
+                        case chestScore > 5 && chestScore <= 12:
+                        case giScore > 9 && giScore <= 15:
+                            console.log("moderate base score")
+                            return $scope.moveToNextQuestion(endQuestions.end_moderate)
+                        case chestScore > 12 && chestScore <= 20:
+                        case giScore > 15:
+                            console.log("severe base score")
+                            return $scope.moveToNextQuestion(endQuestions.end_severe)
+                        case chestScore >= 20:
+                            console.log("urgent base score")
+                            return $scope.moveToNextQuestion(endQuestions.end_urgent)
+                        default:
+                            return $scope.moveToNextQuestion(endQuestions.end_moderate)
+                    }
+              
+                case obScore == 3:
+                    switch(true){
+                        case chestScore > 12 && chestScore <= 20:
+                        case giScore > 15:
+                            console.log("severe base score")
+                            return $scope.moveToNextQuestion(endQuestions.end_severe)
+                        case chestScore >= 20:
+                            console.log("urgent base score")
+                            return $scope.moveToNextQuestion(endQuestions.end_urgent)
+                        default:
+                            return $scope.moveToNextQuestion(endQuestions.end_severe)
+                    }
+
+                case obScore == 4:
+                    switch(true){
+                        case chestScore >= 20:
+                            console.log("urgent base score")
+                            return $scope.moveToNextQuestion(endQuestions.end_urgent)
+                    }
+                    break;
+            }     
+        }
 
 //....................listen for other related questions....................
 
@@ -1791,9 +2213,11 @@ function listenForChestAnswers(chestQuestion) {
             if ($scope.line.id === "noMatch") {
                 speechService.start()
                 .then(function(result){
-                    getNames(result);
+                    getReasons(result)
+                    $scope.showRepeat = false;
                 }).catch(function(error) {
                     console.log(error);
+                    $scope.moveToNextItem("noMatch")      
                 });
             }
         }
@@ -1803,8 +2227,10 @@ function listenForChestAnswers(chestQuestion) {
                 speechService.start()
                 .then(function(result){
                     getReasons(result);
+                    $scope.showRepeat = false;
                 }).catch(function(error) {
                     console.log(error);
+                    $scope.moveToNextItem("noReasonMatch")  
                 });
             }
         }
@@ -1814,8 +2240,10 @@ function listenForChestAnswers(chestQuestion) {
                 speechService.start()
                 .then(function(result){
                     getChestReasons(result);
+                    $scope.showChestRepeat = false;
                 }).catch(function(error) {
                     console.log(error);
+                    $scope.moveToNextItem("noChestMatch")  
                 });
             }
         }
@@ -1825,26 +2253,28 @@ function listenForChestAnswers(chestQuestion) {
                 speechService.start()
                 .then(function(result){
                     getGiReasons(result);
+                    $scope.showGiRepeat = false;
                 }).catch(function(error) {
+                    $scope.moveToNextItem("noGiMatch")  
                     console.log(error);
                 });
             }
         }
-     
-     
-     
-        listenForNames ();
+
+       
         listenForReasons();
         MovetoReason();
         MovetoChestReason();
         MovetoGiReason();
-        //MovetoEndReason();
         listenForNameError();
         listenForReasonError()
         listenForChestError()
         listenForGiError()
     }
+    
+//Functions to move to next question and get animations and audio for each question///////
 
+//Move to next question in scripted
     $scope.moveToNextItem = function(id) {
         scriptService.getNextLine(id).then(function (d) {
             line = d;
@@ -1868,10 +2298,13 @@ function listenForChestAnswers(chestQuestion) {
         });
     }
 
+    //Move to next question in DB
     $scope.moveToNextQuestion = function(question) {
         console.log("Got", question);
         return scriptService.getVisemes(question.speechid)
         .then(function (visemes) {
+            $scope.data.guide = question.guide;
+            $scope.data.images = question.images;
             $scope.data.subtitles = question.text;
             $scope.line = question.text;
             $scope.audio = new Audio('api/speech/' + question.speechid);

@@ -1,2 +1,2 @@
 ﻿console.log("application");
-var app = angular.module('virtualDr', []);
+var app = angular.module('virtualDr', ['ngSanitize']);
