@@ -4,14 +4,13 @@ var mysql = require('mysql');
 var bodyParser = require('body-parser');
 var fs = require('fs');
 
-//for college server mysqli_connect('cs1.ucc.ie', 'ac57', 'siosh', 'mscim2019_ac57');
 
 //start mysql connection
 var db = mysql.createConnection({
-    host: "xxxxx",
-    user: "xxxx",
+    host: "xxx",
+    user: "xxx",
     password: "xxx",
-    database: "xxxx"
+    database: "xxx"
 });
 
 
